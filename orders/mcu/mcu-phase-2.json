@@ -1,0 +1,17 @@
+{
+  "$schema": "../../schema/watch-order.schema.json",
+  "schemaVersion": 1,
+  "id": "mcu-phase-2",
+  "name": "Marvel Cinematic Universe: Phase Two",
+  "description": "Release order, as listed on Wikipedia.",
+  "author": "Watch Order",
+  "version": 1,
+  "entries": [
+    {"type": "movie", "title": "Iron Man 3", "year": 2013, "providerIds": {"Tmdb": "68721"}},
+    {"type": "movie", "title": "Thor: The Dark World", "year": 2013, "providerIds": {"Tmdb": "76338"}},
+    {"type": "movie", "title": "Captain America: The Winter Soldier", "year": 2014, "providerIds": {"Tmdb": "100402"}},
+    {"type": "movie", "title": "Guardians of the Galaxy", "year": 2014, "providerIds": {"Tmdb": "118340"}},
+    {"type": "movie", "title": "Avengers: Age of Ultron", "year": 2015, "providerIds": {"Tmdb": "99861"}},
+    {"type": "movie", "title": "Ant-Man", "year": 2015, "providerIds": {"Tmdb": "102899"}}
+  ]
+}

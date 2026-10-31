@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Jellyfin.Plugin.WatchOrder</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Jellyfin loads its own copies of these at runtime, so they must not be copied into the plugin folder. -->
+    <PackageReference Include="Jellyfin.Controller" Version="12.1.0">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="Jellyfin.Model" Version="12.1.0">
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Configuration\Web\configPage.html" />
+    <EmbeddedResource Include="Configuration\Web\configPage.html" />
+    <None Remove="Configuration\Web\configPage.js" />
+    <EmbeddedResource Include="Configuration\Web\configPage.js" />
+    <None Remove="WebClient\client.js" />
+    <EmbeddedResource Include="WebClient\client.js" />
+  </ItemGroup>
+
+  <!-- Ready-made orders, offered on the dashboard (orders/ready-made.json lists which). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\orders\ready-made.json" LogicalName="ReadyMade/ready-made.json" />
+    <EmbeddedResource Include="..\..\orders\mcu\*.json" LogicalName="ReadyMade/mcu/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\orders\star-wars\*.json" LogicalName="ReadyMade/star-wars/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\orders\cardcaptor-sakura\*.json" LogicalName="ReadyMade/cardcaptor-sakura/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\..\orders\urusei-yatsura\*.json" LogicalName="ReadyMade/urusei-yatsura/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Jellyfin.Plugin.WatchOrder.Tests" />
+  </ItemGroup>
+
+</Project>

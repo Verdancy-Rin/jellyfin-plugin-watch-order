@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Watch Order</title>
+</head>
+<body>
+    <div id="WatchOrderConfigPage"
+         data-role="page"
+         class="page type-interior pluginConfigurationPage"
+         data-require="emby-input,emby-button,emby-checkbox,emby-select,emby-textarea"
+         data-controller="__plugin/WatchOrderConfigJs">
+        <style>
+            #WatchOrderConfigPage { --wo-border: rgba(128,128,128,.28); --wo-soft: rgba(128,128,128,.12); --wo-ok: #3fb950; --wo-warn: #e3a008; --wo-bad: #f0645a; }
+            #WatchOrderConfigPage [hidden] { display: none !important; }
+            .wo-header { display: flex; align-items: center; justify-content: space-between; gap: 1em; flex-wrap: wrap; }
+            .wo-header h2 { margin: .4em 0; }
+            .wo-muted { opacity: .7; }
+            .wo-list { margin: 0 0 1em; padding: 0; list-style: none; }
+            .wo-list li { display: flex; align-items: center; gap: .75em; padding: .75em 0; border-bottom: 1px solid var(--wo-border); flex-wrap: wrap; }
+            .wo-list .wo-meta { flex: 1; min-width: 12em; }
+            .wo-list .wo-name { font-weight: 600; }
+            .wo-list .wo-sub { opacity: .7; font-size: .9em; }
+            .wo-stats { flex: 1 0 100%; min-width: 0; max-width: 100%; }
+            .wo-linkrow { display: flex; align-items: flex-start; gap: 0 1em; flex-wrap: wrap; }
+            .wo-linkrow > .inputContainer { flex: 1 1 20em; margin-bottom: 1em; }
+            .wo-linkrow > .emby-button, .wo-linkrow > [is="emby-button"] { margin: 1.4em 0 0; }
+            .wo-readymade .wo-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+            .wo-readymade h3 { margin: 1em 0 .25em; font-size: 1em; font-weight: 600; opacity: .85; }
+            .wo-tag { display: inline-block; font-size: .8em; padding: .1em .5em; border-radius: 1em; background: var(--wo-soft); margin-left: .4em; white-space: nowrap; }
+            .wo-tag-update { color: var(--wo-warn); }
+            .wo-notice code { overflow-wrap: anywhere; }
+            .wo-table-scroll { overflow-x: auto; }
+            .wo-table { border-collapse: collapse; width: 100%; font-size: .9em; }
+            .wo-table caption { caption-side: bottom; text-align: left; padding-top: .5em; font-size: .9em; }
+            .wo-table th, .wo-table td { text-align: left; padding: .5em .75em .5em 0; border-bottom: 1px solid var(--wo-border); vertical-align: middle; }
+            .wo-table thead th { font-weight: 600; opacity: .8; white-space: nowrap; }
+            .wo-table tbody th { font-weight: 600; }
+            .wo-bar { width: 8em; height: 6px; border-radius: 3px; background: rgba(128,128,128,.3); overflow: hidden; margin-bottom: .25em; }
+            .wo-bar > div { height: 100%; background: var(--jf-palette-primary-main, #00a4dc); }
+            .wo-stat { white-space: nowrap; }
+            .wo-stat-Stalled { color: var(--wo-warn); }
+            .wo-stat-Finished::before { content: "\2713  "; }
+            .wo-errors { color: var(--wo-bad); white-space: pre-wrap; margin: .5em 0; }
+            .wo-errors:empty { display: none; }
+            .wo-notice { border: 1px solid var(--wo-warn); border-radius: 6px; padding: .75em 1em; margin: 1em 0; }
+            .wo-notice a { color: inherit; }
+            .wo-details { margin: 1.5em 0; border-top: 1px solid var(--wo-border); padding-top: .5em; }
+            .wo-details > summary { cursor: pointer; font-size: 1.1em; padding: .5em 0; }
+            #woImportJson { font-family: monospace; min-height: 12em; }
+            .wo-details > summary .wo-muted { font-size: .85em; }
+            .wo-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5em 1.5em; margin: .5em 0 1em; }
+            .wo-toolbar > .emby-button, .wo-toolbar > [is="emby-button"] { margin: 0; }
+            .wo-filter { flex: 1 1 18em; max-width: 30em; margin: 0; }
+            .wo-dropzone { display: flex; align-items: center; gap: 1em; flex-wrap: wrap; padding: 1em; margin: .5em 0 1.5em;
+              border: 2px dashed var(--wo-border); border-radius: 8px; }
+            .wo-dropzone.wo-dragover { border-color: currentColor; background: var(--wo-soft); }
+            .wo-dropzone .emby-button > .material-icons { margin-right: .3em; }
+
+            .wo-entries { list-style: none; margin: 0; padding: 0; }
+            .wo-entry { display: flex; align-items: flex-start; gap: .6em; padding: .6em .5em; border: 1px solid var(--wo-border); border-radius: 6px; margin-bottom: .4em; background: var(--wo-soft); }
+            .wo-entry.wo-dragging { opacity: .4; }
+            .wo-entry.wo-drop-before { box-shadow: 0 -3px 0 0 currentColor; }
+            .wo-entry.wo-drop-after { box-shadow: 0 3px 0 0 currentColor; }
+            .wo-handle { cursor: grab; opacity: .55; padding-top: .15em; user-select: none; }
+            .wo-pos { min-width: 1.6em; text-align: right; opacity: .7; padding-top: .15em; font-variant-numeric: tabular-nums; }
+            .wo-entry-main { flex: 1; min-width: 0; }
+            .wo-entry-label { font-weight: 600; overflow-wrap: anywhere; }
+            .wo-entry-sub { font-size: .85em; opacity: .85; display: flex; gap: .5em; flex-wrap: wrap; align-items: center; margin-top: .15em; }
+            .wo-chip { border: 1px solid var(--wo-border); border-radius: 999px; padding: 0 .55em; font-size: .9em; }
+            .wo-optional { display: inline-flex; align-items: center; gap: .3em; cursor: pointer; margin-left: auto; white-space: nowrap; }
+            .wo-optional input { margin: 0; cursor: pointer; }
+            .wo-entry-optional .wo-entry-label::after { content: "Optional"; margin-left: .5em; font-size: .75em; font-weight: normal; border: 1px dashed currentColor; border-radius: 999px; padding: 0 .5em; opacity: .8; vertical-align: .1em; }
+            .wo-status::before { content: "●"; margin-right: .3em; }
+            .wo-status.wo-ok::before { color: var(--wo-ok); }
+            .wo-status.wo-title::before { color: var(--wo-warn); }
+            .wo-status.wo-missing::before { color: var(--wo-bad); }
+            .wo-status.wo-pending::before { opacity: .4; }
+            .wo-note { width: 100%; box-sizing: border-box; margin-top: .35em; background: transparent; color: inherit; border: none; border-bottom: 1px dashed var(--wo-border); padding: .2em 0; font: inherit; font-size: .9em; }
+            .wo-note:focus { outline: none; border-bottom-style: solid; }
+            .wo-entry-actions { display: flex; gap: .1em; }
+            .wo-icon-btn { background: none; border: none; color: inherit; cursor: pointer; padding: .2em; border-radius: 4px; opacity: .75; line-height: 1; }
+            .wo-icon-btn:hover:not(:disabled), .wo-icon-btn:focus-visible { opacity: 1; background: var(--wo-soft); }
+            .wo-icon-btn:disabled { opacity: .25; cursor: default; }
+
+            .wo-add { margin-top: 1.5em; border: 1px solid var(--wo-border); border-radius: 8px; padding: 0 1em 1em; }
+            .wo-tabs { display: flex; gap: .25em; border-bottom: 1px solid var(--wo-border); margin: 0 -1em 1em; padding: 0 .5em; overflow-x: auto; }
+            .wo-tab { background: none; border: none; color: inherit; font: inherit; padding: .8em .9em; cursor: pointer; opacity: .7; border-bottom: 2px solid transparent; white-space: nowrap; }
+            .wo-tab[aria-selected="true"] { opacity: 1; border-bottom-color: currentColor; font-weight: 600; }
+            .wo-row { display: flex; gap: 0 1em; flex-wrap: wrap; align-items: flex-start; }
+            .wo-row.wo-row-end { align-items: flex-end; }
+            .wo-row > .inputContainer, .wo-row > .selectContainer { flex: 1 1 14em; margin-bottom: 1em; }
+            .wo-row > .wo-narrow { flex: 1 1 6em; max-width: 9em; }
+            .wo-results { list-style: none; margin: 0; padding: 0; max-height: 22em; overflow-y: auto; }
+            .wo-result { display: flex; align-items: center; gap: .75em; padding: .5em; border-radius: 6px; }
+            .wo-result + .wo-result { border-top: 1px solid var(--wo-border); }
+            .wo-result img, .wo-result .wo-noimg { width: 2.6em; height: 3.9em; object-fit: cover; border-radius: 3px; background: var(--wo-soft); flex: none; }
+            .wo-result-main { flex: 1; min-width: 0; }
+            .wo-result-sub { font-size: .85em; opacity: .7; }
+            .wo-picker { border: 1px solid var(--wo-border); border-radius: 6px; padding: .75em 1em; margin-top: .75em; }
+            .wo-picker h4 { margin: .2em 0 .8em; }
+            .wo-actions { display: flex; gap: .75em; margin-top: 1.5em; flex-wrap: wrap; }
+            .wo-hint { font-size: .9em; opacity: .7; margin: .3em 0 1em; }
+        </style>
+
+        <div data-role="content">
+            <div class="content-primary">
+
+                <!-- ============ Order list ============ -->
+                <section id="woListView">
+                    <div class="wo-header">
+                        <h2 class="sectionTitle">Watch Order</h2>
+                    </div>
+                    <p class="wo-muted">Watch films and episodes from across a franchise in one defined order. Each user's progress follows their normal watched status.</p>
+                    <div id="woWebClientNotice" class="wo-notice" role="status" hidden></div>
+
+                    <details class="wo-details" data-section="settings">
+                        <summary>Settings</summary>
+                        <form id="woSettingsForm">
+                            <div class="checkboxContainer">
+                                <label>
+                                    <input is="emby-checkbox" type="checkbox" id="ShowInWebApp" />
+                                    <span>Show a Watch orders page to everyone in the web app</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">Needs the File Transformation plugin. Users may need to refresh the page after this changes.</div>
+                            </div>
+                            <div class="selectContainer">
+                                <select is="emby-select" id="ButtonLocation" label="Where the Watch Orders button appears">
+                                    <option value="LibraryBar">Library bar, next to your libraries</option>
+                                    <option value="TopBarIcon">Icon next to the user menu</option>
+                                    <option value="Both">Both</option>
+                                </select>
+                                <div class="fieldDescription">With the library bar, it also appears in the side menu, and as an icon on screens too narrow for the library bar.</div>
+                            </div>
+                            <div class="selectContainer">
+                                <select is="emby-select" id="LibraryBarPosition" label="Position in the library bar and side menu">
+                                    <option value="End">After your libraries</option>
+                                    <option value="AfterFavourites">Straight after Favourites</option>
+                                </select>
+                                <div class="fieldDescription">"After your libraries" puts it before the More button when some libraries don't fit.</div>
+                            </div>
+                            <div class="checkboxContainer">
+                                <label>
+                                    <input is="emby-checkbox" type="checkbox" id="ShowHomeRow" />
+                                    <span>Show an "Up Next in Your Watch Orders" row on the home screen</span>
+                                </label>
+                                <div class="fieldDescription checkboxFieldDescription">Each user sees the orders they've started, with what's up next. They can add or remove orders from it themselves.</div>
+                            </div>
+                            <div class="selectContainer">
+                                <select is="emby-select" id="AutoplayFollow" label="Autoplay follows watch orders">
+                                    <option value="OptOut">On, unless a user turns it off</option>
+                                    <option value="OptIn">Users turn it on for themselves</option>
+                                    <option value="Off">Off for everyone</option>
+                                </select>
+                                <div class="fieldDescription">When something in an order a user is following starts, the order's next item is queued after it, so autoplay and "Up Next" play that instead of the usual next episode. Users change it on their Watch Orders page. Works in the web app and apps built on it; other apps are left alone.</div>
+                            </div>
+                            <div class="selectContainer">
+                                <select is="emby-select" id="PlaylistSync" label="Playlists of what's left">
+                                    <option value="OptOut">On, unless a user turns it off</option>
+                                    <option value="OptIn">Users turn it on for themselves</option>
+                                    <option value="Off">Off for everyone</option>
+                                </select>
+                                <div class="fieldDescription">Each user gets a playlist of what they have left in each order they're following ("Watch Order: …"), kept up to date as they watch, so they can carry on an order from any Jellyfin app. It goes when they finish, and comes back for a new watch-through. Users change it per order on its page; deleting the playlist turns it off for that order. Turning this off for everyone removes the playlists.</div>
+                            </div>
+                            <div class="checkboxContainer">
+                                <label>
+                                    <input is="emby-checkbox" type="checkbox" id="AutoRefreshOnLibraryChange" />
+                                    <span>Re-match orders automatically when the library changes</span>
+                                </label>
+                            </div>
+                            <div class="inputContainer">
+                                <input is="emby-input" type="number" id="RefreshDebounceSeconds" min="5" label="Wait after last library change (seconds)" />
+                            </div>
+                            <div class="checkboxContainer">
+                                <label>
+                                    <input is="emby-checkbox" type="checkbox" id="AllowTitleMatching" />
+                                    <span>Fall back to title and year when provider IDs don't match</span>
+                                </label>
+                            </div>
+                            <button is="emby-button" type="submit" class="raised button-submit block">
+                                <span>Save settings</span>
+                            </button>
+                        </form>
+                    </details>
+
+                    <details class="wo-details" data-section="orders" open>
+                        <summary>Watch orders <span id="woOrderCount" class="wo-muted"></span></summary>
+                        <div class="wo-toolbar">
+                            <button is="emby-button" type="button" id="woNew" class="raised button-submit">
+                                <span class="material-icons add" aria-hidden="true"></span>
+                                <span>New order</span>
+                            </button>
+                            <div class="inputContainer wo-filter" id="woFilterBox" hidden>
+                                <input is="emby-input" type="search" id="woFilter" label="Filter orders" autocomplete="off" />
+                            </div>
+                        </div>
+                        <ul id="woOrders" class="wo-list"></ul>
+                        <p id="woEmpty" class="fieldDescription" hidden>No orders yet. Create one with <strong>New order</strong>, or import one below.</p>
+                        <p id="woNoMatch" class="fieldDescription" hidden>No orders match that filter.</p>
+                        <button is="emby-button" type="button" id="woRefresh" class="raised button-alt">
+                            <span>Re-match all orders now</span>
+                        </button>
+                    </details>
+
+                    <details class="wo-details" data-section="readymade">
+                        <summary>Ready-made orders</summary>
+                        <p class="fieldDescription">Orders that come with the plugin. Add the ones you want; nothing is added on its own. When a plugin update improves one you've added, you'll be offered the new version here.</p>
+                        <div id="woReadyMade" class="wo-readymade"><p class="wo-muted">Loading…</p></div>
+                    </details>
+
+                    <details class="wo-details" data-section="import">
+                        <summary>Import</summary>
+                        <div id="woDropZone" class="wo-dropzone">
+                            <input type="file" id="woImportFile" accept=".json,application/json" multiple hidden />
+                            <button is="emby-button" type="button" id="woChooseFiles" class="raised">
+                                <span class="material-icons upload_file" aria-hidden="true"></span><span>Choose files…</span>
+                            </button>
+                            <span class="wo-muted">or drop order files here. You can pick several at once.</span>
+                        </div>
+                        <div class="wo-linkrow">
+                            <div class="inputContainer">
+                                <input is="emby-input" type="url" id="woImportUrl" label="Or import from a link" placeholder="https://" autocomplete="off" />
+                                <div class="fieldDescription">A link to an order's .json file. GitHub file pages and Gists work too.</div>
+                            </div>
+                            <button is="emby-button" type="button" id="woImportLink" class="raised"><span>Import from link</span></button>
+                        </div>
+                        <div class="inputContainer">
+                            <textarea is="emby-textarea" id="woImportJson" label="Or paste an order" placeholder='{ "id": "my-order", "name": "My order", "entries": [ ... ] }'></textarea>
+                            <div class="fieldDescription">If you already have an order with the same ID, you're asked before it's replaced.</div>
+                        </div>
+                        <div id="woImportErrors" class="wo-errors" role="alert"></div>
+                        <button is="emby-button" type="button" id="woImport" class="raised button-submit">
+                            <span>Import</span>
+                        </button>
+                    </details>
+                </section>
+
+                <!-- ============ Order builder ============ -->
+                <section id="woBuilderView" hidden>
+                    <button is="emby-button" type="button" id="woBack" class="button-flat">
+                        <span class="material-icons arrow_back" aria-hidden="true"></span>
+                        <span>All orders</span>
+                    </button>
+                    <h2 id="woBuilderTitle" class="sectionTitle">New order</h2>
+
+                    <div class="wo-row">
+                        <div class="inputContainer">
+                            <input is="emby-input" type="text" id="woName" label="Name" placeholder="e.g. MCU Phase One" required />
+                        </div>
+                        <div class="inputContainer">
+                            <input is="emby-input" type="text" id="woId" label="ID" pattern="[a-z0-9][a-z0-9\-]{0,63}" maxlength="64" />
+                            <div class="fieldDescription">Used as the file name. Lowercase letters, numbers and hyphens.</div>
+                        </div>
+                    </div>
+                    <div class="wo-row">
+                        <div class="inputContainer">
+                            <input is="emby-input" type="text" id="woDescription" label="Description (optional)" />
+                        </div>
+                        <div class="inputContainer">
+                            <input is="emby-input" type="text" id="woAuthor" label="Author or source (optional)" />
+                        </div>
+                    </div>
+                    <div class="wo-row">
+                        <div class="inputContainer">
+                            <input is="emby-input" type="number" id="woVersion" label="Version" min="1" step="1" />
+                            <div class="fieldDescription">Raise this when you share an updated copy, so people who have the order can tell it's newer.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <input is="emby-input" type="url" id="woSource" label="Published at (optional)" placeholder="https://" />
+                            <div class="fieldDescription">A link to where the latest copy of this order's file lives, if you share it.</div>
+                        </div>
+                    </div>
+
+                    <div class="wo-header">
+                        <h3 class="sectionTitle">Entries</h3>
+                        <span id="woSummary" class="wo-muted"></span>
+                    </div>
+                    <ol id="woEntries" class="wo-entries" aria-label="Entries in viewing order"></ol>
+                    <p id="woNoEntries" class="wo-hint">No entries yet. Add films and episodes below; drag rows to reorder.</p>
+                    <div id="woBuilderErrors" class="wo-errors" role="alert"></div>
+
+                    <div class="wo-add">
+                        <div class="wo-tabs" role="tablist">
+                            <button type="button" class="wo-tab" role="tab" data-tab="library" aria-selected="true">Your library</button>
+                            <button type="button" class="wo-tab" role="tab" data-tab="provider" aria-selected="false">Metadata providers</button>
+                            <button type="button" class="wo-tab" role="tab" data-tab="collection" aria-selected="false">From a collection</button>
+                            <button type="button" class="wo-tab" role="tab" data-tab="manual" aria-selected="false">Manual</button>
+                        </div>
+
+                        <!-- Library -->
+                        <div data-panel="library" role="tabpanel">
+                            <div class="inputContainer">
+                                <input is="emby-input" type="search" id="woLibrarySearch" label="Search your films and shows" autocomplete="off" />
+                            </div>
+                            <ul id="woLibraryResults" class="wo-results"></ul>
+                            <div id="woLibraryPicker"></div>
+                        </div>
+
+                        <!-- Metadata providers -->
+                        <div data-panel="provider" role="tabpanel" hidden>
+                            <p class="wo-hint">Search TMDb, TVDb and your other metadata providers, including titles you don't have yet. Those will show as missing until they're added to your library.</p>
+                            <form id="woProviderForm" class="wo-row wo-row-end">
+                                <div class="selectContainer wo-narrow">
+                                    <select is="emby-select" id="woProviderType" label="Type">
+                                        <option value="Movie">Film</option>
+                                        <option value="Series">Series</option>
+                                    </select>
+                                </div>
+                                <div class="inputContainer">
+                                    <input is="emby-input" type="text" id="woProviderName" label="Title" required />
+                                </div>
+                                <div class="inputContainer wo-narrow">
+                                    <input is="emby-input" type="number" id="woProviderYear" label="Year" min="1880" max="2100" />
+                                </div>
+                                <div class="inputContainer wo-narrow">
+                                    <button is="emby-button" type="submit" class="raised button-submit"><span>Search</span></button>
+                                </div>
+                            </form>
+                            <ul id="woProviderResults" class="wo-results"></ul>
+                            <div id="woProviderPicker"></div>
+                        </div>
+
+                        <!-- Collection -->
+                        <div data-panel="collection" role="tabpanel" hidden>
+                            <p class="wo-hint">Adds the films in one of your collections, in release order. You can then drag episodes in between them.</p>
+                            <div class="wo-row wo-row-end">
+                                <div class="selectContainer">
+                                    <select is="emby-select" id="woCollection" label="Collection"></select>
+                                </div>
+                                <div class="inputContainer wo-narrow">
+                                    <button is="emby-button" type="button" id="woAddCollection" class="raised button-submit"><span>Add films</span></button>
+                                </div>
+                            </div>
+                            <div id="woCollectionInfo" class="wo-hint"></div>
+                        </div>
+
+                        <!-- Manual -->
+                        <div data-panel="manual" role="tabpanel" hidden>
+                            <form id="woManualForm">
+                                <div class="wo-row">
+                                    <div class="selectContainer wo-narrow">
+                                        <select is="emby-select" id="woManualType" label="Type">
+                                            <option value="movie">Film</option>
+                                            <option value="season">Whole season</option>
+                                            <option value="episodes">Episode range</option>
+                                            <option value="episode">Single episode</option>
+                                        </select>
+                                    </div>
+                                    <div class="inputContainer">
+                                        <input is="emby-input" type="text" id="woManualTitle" label="Title" />
+                                    </div>
+                                    <div class="inputContainer wo-narrow">
+                                        <input is="emby-input" type="number" id="woManualYear" label="Year" min="1880" max="2100" />
+                                    </div>
+                                </div>
+                                <div class="wo-row" data-manual-fields="season">
+                                    <div class="inputContainer wo-narrow" data-for="season episodes episode">
+                                        <input is="emby-input" type="number" id="woManualSeason" label="Season" min="0" />
+                                    </div>
+                                    <div class="inputContainer wo-narrow" data-for="episodes">
+                                        <input is="emby-input" type="number" id="woManualFrom" label="From episode" min="0" />
+                                    </div>
+                                    <div class="inputContainer wo-narrow" data-for="episodes">
+                                        <input is="emby-input" type="number" id="woManualTo" label="To episode" min="0" />
+                                    </div>
+                                    <div class="inputContainer wo-narrow" data-for="episode">
+                                        <input is="emby-input" type="number" id="woManualEpisode" label="Episode" min="0" />
+                                    </div>
+                                </div>
+                                <div class="wo-row">
+                                    <div class="inputContainer">
+                                        <input is="emby-input" type="text" id="woManualTmdb" label="TMDb ID (optional)" />
+                                    </div>
+                                    <div class="inputContainer">
+                                        <input is="emby-input" type="text" id="woManualImdb" label="IMDb ID (optional)" placeholder="tt..." />
+                                    </div>
+                                    <div class="inputContainer">
+                                        <input is="emby-input" type="text" id="woManualTvdb" label="TVDb ID (optional)" />
+                                    </div>
+                                </div>
+                                <p class="wo-hint">For episodes, the IDs and year are the <em>series'</em>, not the episode's.</p>
+                                <div id="woManualErrors" class="wo-errors" role="alert"></div>
+                                <button is="emby-button" type="submit" class="raised button-submit"><span>Add entry</span></button>
+                            </form>
+                        </div>
+                        <div id="woAddStatus" class="wo-hint" aria-live="polite"></div>
+                    </div>
+
+                    <div class="wo-actions">
+                        <button is="emby-button" type="button" id="woSave" class="raised button-submit"><span>Save order</span></button>
+                        <button is="emby-button" type="button" id="woCancel" class="raised button-cancel"><span>Cancel</span></button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "../../schema/watch-order.schema.json",
+  "schemaVersion": 1,
+  "id": "steven-universe",
+  "name": "Steven Universe",
+  "description": "Steven Universe, the film and Steven Universe Future, in story order.",
+  "author": "Verdancy",
+  "entries": [
+    {"type": "season", "series": "Steven Universe", "year": 2013, "season": 1, "providerIds": {"Tmdb": "61175", "Tvdb": "270701", "Imdb": "tt3061046"}},
+    {"type": "season", "series": "Steven Universe", "year": 2013, "season": 2, "providerIds": {"Tmdb": "61175", "Tvdb": "270701", "Imdb": "tt3061046"}},
+    {"type": "season", "series": "Steven Universe", "year": 2013, "season": 3, "providerIds": {"Tmdb": "61175", "Tvdb": "270701", "Imdb": "tt3061046"}},
+    {"type": "season", "series": "Steven Universe", "year": 2013, "season": 4, "providerIds": {"Tmdb": "61175", "Tvdb": "270701", "Imdb": "tt3061046"}},
+    {"type": "season", "series": "Steven Universe", "year": 2013, "season": 5, "providerIds": {"Tmdb": "61175", "Tvdb": "270701", "Imdb": "tt3061046"}},
+    {"type": "movie", "title": "Steven Universe: The Movie", "year": 2019, "providerIds": {"Tmdb": "537061", "Imdb": "tt10515852"}},
+    {"type": "season", "series": "Steven Universe Future", "year": 2019, "season": 1, "providerIds": {"Tmdb": "94280", "Tvdb": "370471", "Imdb": "tt13714610"}}
+  ]
+}

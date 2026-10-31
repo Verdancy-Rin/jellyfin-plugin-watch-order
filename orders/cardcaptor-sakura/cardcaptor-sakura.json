@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "id": "cardcaptor-sakura",
+  "name": "Cardcaptor Sakura",
+  "description": "The 90s and 10s TV series with its specials (OVAs) and films placed in story order. Episode and special numbers follow a three-season layout for the 90s series, and a one-season layout for the 10s series, plus specials (season 0); libraries that number the series differently won't match every entry.",
+  "author": "Watch Order",
+  "version": 1,
+  "entries": [
+    {
+      "type": "season",
+      "year": 1998,
+      "series": "Cardcaptor Sakura",
+      "season": 1,
+      "providerIds": {
+        "Imdb": "tt0221735",
+        "Tmdb": "35790",
+        "Tvdb": "70668"
+      }
+    },
+    {
+      "type": "movie",
+      "title": "Cardcaptor Sakura: The Movie",
+      "year": 1999,
+      "providerIds": {
+        "Imdb": "tt0301082",
+        "Tmdb": "26945"
+      }
+    },
+    {
+      "type": "season",
+      "year": 1998,
+      "series": "Cardcaptor Sakura",
+      "season": 2,
+      "providerIds": {
+        "Imdb": "tt0221735",
+        "Tmdb": "35790",
+        "Tvdb": "70668"
+      }
+    },
+    {
+      "type": "season",
+      "year": 1998,
+      "series": "Cardcaptor Sakura",
+      "season": 3,
+      "providerIds": {
+        "Imdb": "tt0221735",
+        "Tmdb": "35790",
+        "Tvdb": "70668"
+      }
+    },
+    {
+      "type": "movie",
+      "title": "Cardcaptor Sakura: The Sealed Card",
+      "year": 2000,
+      "providerIds": {
+        "Imdb": "tt0301083",
+        "Tmdb": "31347"
+      }
+    },
+    {
+      "type": "episode",
+      "year": 2018,
+      "series": "Cardcaptor Sakura: Clear Card",
+      "season": 0,
+      "episode": 1,
+      "providerIds": {
+        "Imdb": "tt6279576",
+        "Tmdb": "272252",
+        "Tvdb": "454838"
+      }
+    },
+    {
+      "type": "season",
+      "year": 2018,
+      "series": "Cardcaptor Sakura: Clear Card",
+      "season": 1,
+      "providerIds": {
+        "Imdb": "tt6279576",
+        "Tmdb": "272252",
+        "Tvdb": "454838"
+      }
+    }
+  ]
+}

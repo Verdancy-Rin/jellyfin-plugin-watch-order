@@ -1,0 +1,26 @@
+name: Order request
+description: Suggest a watch order to add.
+labels: [order]
+body:
+  - type: markdown
+    attributes:
+      value: You can also add an order yourself; see CONTRIBUTING.md. Build it in the Dashboard and use Export to get the file.
+  - type: input
+    id: franchise
+    attributes:
+      label: Franchise or series
+      placeholder: Star Trek
+    validations:
+      required: true
+  - type: textarea
+    id: order
+    attributes:
+      label: Which order?
+      description: Release order, story order, a specific published order... and where it comes from (an official timeline, Wikipedia, a well-known fan order), with a link if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Optional entries, specials, or anything that's easy to get wrong.

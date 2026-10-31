@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/schema/watch-order.schema.json",
+  "title": "Watch Order",
+  "description": "A single viewing order across films and episodes. Gives editor autocomplete and validation; the plugin applies the same rules on import.",
+  "type": "object",
+  "required": ["id", "name", "entries"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "type": "integer", "const": 1, "description": "Format version. Only raised for changes older plugins would misread; new optional fields don't raise it." },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,63}$", "description": "Unique slug, also used as the file name." },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "author": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1, "description": "This order's own version: 1 to start with, raised each time you publish a change, so people with a copy can tell when a newer one is available." },
+    "source": { "type": "string", "pattern": "^https?://", "description": "Where the latest copy of this file is published." },
+    "entries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/entry" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "providerIds": {
+      "type": "object",
+      "description": "Jellyfin provider ids of the film, or of the series for episode entries.",
+      "properties": {
+        "Tmdb": { "type": "string" },
+        "Imdb": { "type": "string", "pattern": "^tt\\d+$" },
+        "Tvdb": { "type": "string" }
+      },
+      "additionalProperties": { "type": "string" }
+    },
+    "common": {
+      "properties": {
+        "year": { "type": "integer", "minimum": 1880 },
+        "providerIds": { "$ref": "#/$defs/providerIds" },
+        "note": { "type": "string" },
+        "optional": { "type": "boolean", "description": "Filler or a side story. Each user chooses per order whether to skip optional entries." }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["type"],
+      "oneOf": [
+        {
+          "properties": { "type": { "const": "movie" }, "title": { "type": "string" } },
+          "anyOf": [{ "required": ["title"] }, { "required": ["providerIds"] }]
+        },
+        {
+          "properties": { "type": { "const": "episode" }, "series": { "type": "string" }, "season": { "type": "integer", "minimum": 0 }, "episode": { "type": "integer", "minimum": 0 } },
+          "required": ["season", "episode"],
+          "anyOf": [{ "required": ["series"] }, { "required": ["providerIds"] }]
+        },
+        {
+          "properties": { "type": { "const": "episodes" }, "series": { "type": "string" }, "season": { "type": "integer", "minimum": 0 }, "from": { "type": "integer", "minimum": 0 }, "to": { "type": "integer", "minimum": 0 } },
+          "required": ["season", "from", "to"],
+          "anyOf": [{ "required": ["series"] }, { "required": ["providerIds"] }]
+        },
+        {
+          "properties": { "type": { "const": "season" }, "series": { "type": "string" }, "season": { "type": "integer", "minimum": 0 } },
+          "required": ["season"],
+          "anyOf": [{ "required": ["series"] }, { "required": ["providerIds"] }]
+        }
+      ],
+      "allOf": [{ "$ref": "#/$defs/common" }]
+    }
+  }
+}

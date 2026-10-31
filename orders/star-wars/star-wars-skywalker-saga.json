@@ -1,0 +1,20 @@
+{
+  "$schema": "../../schema/watch-order.schema.json",
+  "schemaVersion": 1,
+  "id": "star-wars-skywalker-saga",
+  "name": "Star Wars: The Skywalker Saga",
+  "description": "The nine main films, Episodes I to IX, in story order.",
+  "author": "Watch Order",
+  "version": 1,
+  "entries": [
+    {"type": "movie", "title": "Star Wars: Episode I - The Phantom Menace", "year": 1999, "providerIds": {"Tmdb": "1893"}},
+    {"type": "movie", "title": "Star Wars: Episode II - Attack of the Clones", "year": 2002, "providerIds": {"Tmdb": "1894"}},
+    {"type": "movie", "title": "Star Wars: Episode III - Revenge of the Sith", "year": 2005, "providerIds": {"Tmdb": "1895"}},
+    {"type": "movie", "title": "Star Wars", "year": 1977, "providerIds": {"Tmdb": "11"}, "note": "Episode IV - A New Hope"},
+    {"type": "movie", "title": "The Empire Strikes Back", "year": 1980, "providerIds": {"Tmdb": "1891"}},
+    {"type": "movie", "title": "Return of the Jedi", "year": 1983, "providerIds": {"Tmdb": "1892"}},
+    {"type": "movie", "title": "Star Wars: The Force Awakens", "year": 2015, "providerIds": {"Tmdb": "140607"}},
+    {"type": "movie", "title": "Star Wars: The Last Jedi", "year": 2017, "providerIds": {"Tmdb": "181808"}},
+    {"type": "movie", "title": "Star Wars: The Rise of Skywalker", "year": 2019, "providerIds": {"Tmdb": "181812"}}
+  ]
+}

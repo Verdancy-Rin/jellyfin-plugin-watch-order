@@ -1,0 +1,33 @@
+{
+  "$comment": "The orders bundled with the plugin, offered on the dashboard under Ready-made orders. Admins add the ones they want; nothing is added automatically. Raise an order's version when you change it, so admins who added it are offered the update.",
+  "groups": [
+    {
+      "name": "Marvel Cinematic Universe",
+      "orders": [
+        "mcu/mcu-complete.json",
+        "mcu/mcu-infinity-saga.json",
+        "mcu/mcu-multiverse-saga.json",
+        "mcu/mcu-phase-1.json",
+        "mcu/mcu-phase-2.json",
+        "mcu/mcu-phase-3.json",
+        "mcu/mcu-phase-4.json",
+        "mcu/mcu-phase-5.json",
+        "mcu/mcu-phase-6.json"
+      ]
+    },
+    {
+      "name": "Star Wars",
+      "orders": [
+        "star-wars/star-wars-skywalker-saga.json",
+        "star-wars/star-wars-complete.json"
+      ]
+    },
+    {
+      "name": "Anime",
+      "orders": [
+        "cardcaptor-sakura/cardcaptor-sakura.json",
+        "urusei-yatsura/urusei-yatsura-1981.json"
+      ]
+    }
+  ]
+}

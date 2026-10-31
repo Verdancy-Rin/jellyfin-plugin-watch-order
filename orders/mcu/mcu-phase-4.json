@@ -1,0 +1,29 @@
+{
+  "$schema": "../../schema/watch-order.schema.json",
+  "schemaVersion": 1,
+  "id": "mcu-phase-4",
+  "name": "Marvel Cinematic Universe: Phase Four",
+  "description": "Release order, with Disney+ series and specials, as listed for each phase on Wikipedia (October 2026). Animated alternate-universe series, shorts and standalone specials are optional.",
+  "author": "Watch Order",
+  "version": 1,
+  "entries": [
+    {"type": "season", "series": "WandaVision", "year": 2021, "season": 1, "providerIds": {"Tmdb": "85271"}},
+    {"type": "season", "series": "The Falcon and the Winter Soldier", "year": 2021, "season": 1, "providerIds": {"Tmdb": "88396"}},
+    {"type": "season", "series": "Loki", "year": 2021, "season": 1, "providerIds": {"Tmdb": "84958"}},
+    {"type": "movie", "title": "Black Widow", "year": 2021, "providerIds": {"Tmdb": "497698"}},
+    {"type": "season", "series": "What If...?", "year": 2021, "season": 1, "providerIds": {"Tmdb": "91363"}, "note": "Animated, set in other universes", "optional": true},
+    {"type": "movie", "title": "Shang-Chi and the Legend of the Ten Rings", "year": 2021, "providerIds": {"Tmdb": "566525"}},
+    {"type": "movie", "title": "Eternals", "year": 2021, "providerIds": {"Tmdb": "524434"}},
+    {"type": "season", "series": "Hawkeye", "year": 2021, "season": 1, "providerIds": {"Tmdb": "88329"}},
+    {"type": "movie", "title": "Spider-Man: No Way Home", "year": 2021, "providerIds": {"Tmdb": "634649"}},
+    {"type": "season", "series": "Moon Knight", "year": 2022, "season": 1, "providerIds": {"Tmdb": "92749"}},
+    {"type": "movie", "title": "Doctor Strange in the Multiverse of Madness", "year": 2022, "providerIds": {"Tmdb": "453395"}},
+    {"type": "season", "series": "Ms. Marvel", "year": 2022, "season": 1, "providerIds": {"Tmdb": "92782"}},
+    {"type": "movie", "title": "Thor: Love and Thunder", "year": 2022, "providerIds": {"Tmdb": "616037"}},
+    {"type": "season", "series": "I Am Groot", "year": 2022, "season": 1, "providerIds": {"Tmdb": "232125"}, "note": "Shorts", "optional": true},
+    {"type": "season", "series": "She-Hulk: Attorney at Law", "year": 2022, "season": 1, "providerIds": {"Tmdb": "92783"}},
+    {"type": "movie", "title": "Werewolf by Night", "year": 2022, "providerIds": {"Tmdb": "894205"}, "note": "Standalone special", "optional": true},
+    {"type": "movie", "title": "Black Panther: Wakanda Forever", "year": 2022, "providerIds": {"Tmdb": "505642"}},
+    {"type": "movie", "title": "The Guardians of the Galaxy Holiday Special", "year": 2022, "providerIds": {"Tmdb": "774752"}, "note": "Short special, leads into Vol. 3", "optional": true}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "../../schema/watch-order.schema.json",
+  "schemaVersion": 1,
+  "id": "star-wars-clone-wars-era",
+  "name": "Star Wars: Clone Wars era",
+  "description": "Example order showing how films and series interleave. The film and series are matched by title and year; add providerIds for more reliable matching.",
+  "author": "Example",
+  "entries": [
+    { "type": "movie", "title": "Star Wars: Episode II - Attack of the Clones", "year": 2002 },
+    { "type": "movie", "title": "Star Wars: The Clone Wars", "year": 2008, "note": "The animated film that launches the series" },
+    { "type": "season", "series": "Star Wars: The Clone Wars", "year": 2008, "season": 1 },
+    { "type": "season", "series": "Star Wars: The Clone Wars", "year": 2008, "season": 2 },
+    { "type": "episodes", "series": "Star Wars: The Clone Wars", "year": 2008, "season": 7, "from": 9, "to": 12, "note": "Siege of Mandalore arc" },
+    { "type": "movie", "title": "Star Wars: Episode III - Revenge of the Sith", "year": 2005 }
+  ]
+}

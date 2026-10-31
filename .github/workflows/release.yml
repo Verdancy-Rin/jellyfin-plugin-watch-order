@@ -1,0 +1,70 @@
+name: Release
+
+# Push a tag like v1.0.0.0 to build the plugin, attach the zip to a GitHub release
+# and add the version to manifest.json, so the repository URL works in Jellyfin's catalog.
+# Before tagging: set the version and write the release notes in build.yaml (changelog).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Read version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Check build.yaml matches the tag
+        run: |
+          grep -q "^version: \"${VERSION}\"" build.yaml || { echo "build.yaml's version isn't ${VERSION}; update it (and the changelog) before tagging."; exit 1; }
+          python3 .github/scripts/release_notes.py build.yaml > release-notes.md
+          cat release-notes.md
+
+      - name: Test
+        run: dotnet test Jellyfin.Plugin.WatchOrder.sln --configuration Release
+
+      - name: Build
+        run: >
+          dotnet publish src/Jellyfin.Plugin.WatchOrder/Jellyfin.Plugin.WatchOrder.csproj
+          --configuration Release --output artifacts
+          -p:AssemblyVersion=${{ env.VERSION }} -p:FileVersion=${{ env.VERSION }}
+
+      - name: Package
+        run: |
+          ZIP="watch-order_${VERSION}.zip"
+          (cd artifacts && zip "../$ZIP" Jellyfin.Plugin.WatchOrder.dll)
+          echo "ZIP=$ZIP" >> "$GITHUB_ENV"
+          echo "MD5=$(md5sum "$ZIP" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP }}
+          body_path: release-notes.md
+
+      - name: Add version to manifest.json
+        run: |
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/${ZIP}"
+          jq --arg v "$VERSION" --arg url "$URL" --arg md5 "$MD5" \
+             --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --rawfile log release-notes.md \
+             '.[0].versions = ([{version: $v, changelog: $log, targetAbi: "12.1.0.0", sourceUrl: $url, checksum: $md5, timestamp: $ts}] + .[0].versions)' \
+             manifest.json > manifest.tmp && mv manifest.tmp manifest.json
+
+      - name: Commit manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "Release ${VERSION}: update manifest.json"
+          git push origin main

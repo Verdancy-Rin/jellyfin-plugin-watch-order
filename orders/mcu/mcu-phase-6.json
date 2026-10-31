@@ -1,0 +1,23 @@
+{
+  "$schema": "../../schema/watch-order.schema.json",
+  "schemaVersion": 1,
+  "id": "mcu-phase-6",
+  "name": "Marvel Cinematic Universe: Phase Six",
+  "description": "Release order, with Disney+ series and specials, as listed for each phase on Wikipedia (October 2026). Animated alternate-universe series, shorts and standalone specials are optional.",
+  "author": "Watch Order",
+  "version": 1,
+  "entries": [
+    {"type": "movie", "title": "The Fantastic 4: First Steps", "year": 2025, "providerIds": {"Tmdb": "617126"}, "note": "Set in its own universe, Earth-828"},
+    {"type": "season", "series": "Eyes of Wakanda", "year": 2025, "season": 1, "providerIds": {"Tmdb": "241388"}, "note": "Animated anthology", "optional": true},
+    {"type": "season", "series": "Marvel Zombies", "year": 2025, "season": 1, "providerIds": {"Tmdb": "138505"}, "note": "Animated, set in other universes", "optional": true},
+    {"type": "season", "series": "Wonder Man", "year": 2026, "season": 1, "providerIds": {"Tmdb": "198178"}},
+    {"type": "season", "series": "Daredevil: Born Again", "year": 2025, "season": 2, "providerIds": {"Tmdb": "202555"}},
+    {"type": "movie", "title": "The Punisher: One Last Kill", "year": 2026, "providerIds": {"Tmdb": "1439930"}, "note": "Special"},
+    {"type": "movie", "title": "Spider-Man: Brand New Day", "year": 2026, "providerIds": {"Tmdb": "969681"}},
+    {"type": "season", "series": "VisionQuest", "year": 2026, "season": 1, "providerIds": {"Tmdb": "213375"}},
+    {"type": "movie", "title": "Avengers: Doomsday", "year": 2026, "providerIds": {"Tmdb": "1003596"}, "note": "Coming 18 December 2026"},
+    {"type": "season", "series": "Your Friendly Neighborhood Spider-Man", "year": 2025, "season": 2, "providerIds": {"Tmdb": "138503"}, "note": "Animated, its own continuity. Coming 13 January 2027", "optional": true},
+    {"type": "season", "series": "Daredevil: Born Again", "year": 2025, "season": 3, "providerIds": {"Tmdb": "202555"}, "note": "Coming March 2027"},
+    {"type": "movie", "title": "Avengers: Secret Wars", "year": 2027, "providerIds": {"Tmdb": "1003598"}, "note": "Coming 17 December 2027"}
+  ]
+}

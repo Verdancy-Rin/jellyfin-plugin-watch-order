@@ -1,0 +1,27 @@
+{
+  "$schema": "../../schema/watch-order.schema.json",
+  "schemaVersion": 1,
+  "id": "mcu-phase-5",
+  "name": "Marvel Cinematic Universe: Phase Five",
+  "description": "Release order, with Disney+ series and specials, as listed for each phase on Wikipedia (October 2026). Animated alternate-universe series, shorts and standalone specials are optional.",
+  "author": "Watch Order",
+  "version": 1,
+  "entries": [
+    {"type": "movie", "title": "Ant-Man and the Wasp: Quantumania", "year": 2023, "providerIds": {"Tmdb": "640146"}},
+    {"type": "movie", "title": "Guardians of the Galaxy Vol. 3", "year": 2023, "providerIds": {"Tmdb": "447365"}},
+    {"type": "season", "series": "Secret Invasion", "year": 2023, "season": 1, "providerIds": {"Tmdb": "114472"}},
+    {"type": "season", "series": "I Am Groot", "year": 2022, "season": 2, "providerIds": {"Tmdb": "232125"}, "note": "Shorts", "optional": true},
+    {"type": "season", "series": "Loki", "year": 2021, "season": 2, "providerIds": {"Tmdb": "84958"}},
+    {"type": "movie", "title": "The Marvels", "year": 2023, "providerIds": {"Tmdb": "609681"}},
+    {"type": "season", "series": "What If...?", "year": 2021, "season": 2, "providerIds": {"Tmdb": "91363"}, "note": "Animated, set in other universes", "optional": true},
+    {"type": "season", "series": "Echo", "year": 2024, "season": 1, "providerIds": {"Tmdb": "122226"}},
+    {"type": "movie", "title": "Deadpool & Wolverine", "year": 2024, "providerIds": {"Tmdb": "533535"}},
+    {"type": "season", "series": "Agatha All Along", "year": 2024, "season": 1, "providerIds": {"Tmdb": "138501"}},
+    {"type": "season", "series": "What If...?", "year": 2021, "season": 3, "providerIds": {"Tmdb": "91363"}, "note": "Animated, set in other universes", "optional": true},
+    {"type": "season", "series": "Your Friendly Neighborhood Spider-Man", "year": 2025, "season": 1, "providerIds": {"Tmdb": "138503"}, "note": "Animated, its own continuity", "optional": true},
+    {"type": "movie", "title": "Captain America: Brave New World", "year": 2025, "providerIds": {"Tmdb": "822119"}},
+    {"type": "season", "series": "Daredevil: Born Again", "year": 2025, "season": 1, "providerIds": {"Tmdb": "202555"}},
+    {"type": "movie", "title": "Thunderbolts*", "year": 2025, "providerIds": {"Tmdb": "986056"}},
+    {"type": "season", "series": "Ironheart", "year": 2025, "season": 1, "providerIds": {"Tmdb": "114471"}}
+  ]
+}

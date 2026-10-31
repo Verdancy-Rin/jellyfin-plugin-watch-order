@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Order file format
+    url: https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/blob/main/docs/order-format.md
+    about: How order files are written, for building or sharing your own.

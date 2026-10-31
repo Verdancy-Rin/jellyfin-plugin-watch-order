@@ -1,0 +1,50 @@
+name: Bug report
+description: Something in Watch Order doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting this. Watch Order is maintained in spare time, so the more of this you can fill in, the sooner it can be looked at.
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Watch Order version
+      description: Dashboard → Plugins → Watch Order.
+      placeholder: 1.0.0.0
+    validations:
+      required: true
+  - type: input
+    id: jellyfin-version
+    attributes:
+      label: Jellyfin version
+      description: Dashboard → General (or the About page).
+      placeholder: 12.1.0
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where it happened
+      description: The web app (which browser?), a specific Jellyfin app, or the Dashboard.
+      placeholder: Web app in Firefox 140
+    validations:
+      required: true
+  - type: dropdown
+    id: file-transformation
+    attributes:
+      label: Is the File Transformation plugin installed?
+      description: It's needed for the Watch Orders page, home screen row and item page section in the web app.
+      options: ["Yes", "No", "Not sure"]
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened, and what did you expect?
+      description: Steps to make it happen again help a lot. Name the order if it's about one.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log lines
+      description: Lines from the Jellyfin log (Dashboard → Logs) that mention "Watch Order", around when it happened.
+      render: text

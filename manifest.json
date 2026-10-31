@@ -1,0 +1,12 @@
+[
+  {
+    "guid": "760c9732-e114-481f-b6c9-5a2a169111c1",
+    "name": "Watch Order",
+    "description": "Define viewing orders that mix films and episodes from different series, see what's missing from your library, and track each user's progress.",
+    "overview": "Watch films and episodes from across a franchise in one defined order.",
+    "owner": "Verdancy-Rin",
+    "category": "General",
+    "imageUrl": "https://raw.githubusercontent.com/Verdancy-Rin/jellyfin-plugin-watch-order/main/images/watch-order.png",
+    "versions": []
+  }
+]
