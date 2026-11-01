@@ -172,6 +172,7 @@ The Release workflow checks the version matches, runs the tests, builds the plug
 - [x] **Watch-throughs**: count earlier viewing or start fresh, start over, re-watch counter.
 - [x] **Autoplay follows the order**: when something in an order you're following starts, queue the order's next item after it.
 - [x] **Import from a link**, and **ready-made orders** bundled with the plugin.
+- [ ] **Optional but recommended entries.** Mark an optional entry (filler, a side story, a film) as recommended, and let each viewer choose to watch everything, skip optional entries but keep the recommended ones, or skip all optional entries. Older plugin versions would treat recommended entries as plain optional ones.
 - [ ] Extra order sources (community indexes an admin can add, like plugin repositories). Not planned for now; anyone can share orders by link.
 - [x] **Optional entries**, with a per-user, per-order choice to skip them.
 - [x] **Resolver tests** against an in-memory library that follows Jellyfin's lookup rules.
