@@ -3,8 +3,10 @@
   "schemaVersion": 1,
   "id": "steven-universe",
   "name": "Steven Universe",
-  "description": "Steven Universe, the film and Steven Universe Future, in story order.",
+  "description": "The complete Steven Universe story in viewing order: the original series (seasons 1 to 5), Steven Universe: The Movie, then Steven Universe Future. Specials and shorts are not included.",
   "author": "Verdancy",
+  "version": 1,
+  "source": "https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/blob/main/orders/steven-universe/steven-universe.json",
   "entries": [
     {"type": "season", "series": "Steven Universe", "year": 2013, "season": 1, "providerIds": {"Tmdb": "61175", "Tvdb": "270701", "Imdb": "tt3061046"}},
     {"type": "season", "series": "Steven Universe", "year": 2013, "season": 2, "providerIds": {"Tmdb": "61175", "Tvdb": "270701", "Imdb": "tt3061046"}},
