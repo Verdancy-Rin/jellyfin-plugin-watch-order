@@ -1,5 +1,14 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Ask a question
+    url: https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/discussions/categories/q-a
+    about: How-tos, and "is this a bug?" questions. Other users can help here too.
+  - name: Share an order
+    url: https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/discussions/categories/share-an-order
+    about: Post a link to a watch order you've made, so others can import it.
+  - name: Suggest an idea
+    url: https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/discussions/categories/ideas
+    about: Feature suggestions and wishes.
   - name: Order file format
     url: https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/blob/main/docs/order-format.md
-    about: How order files are written, for building or sharing your own.
+    about: How watch order files are written, for building or sharing your own.

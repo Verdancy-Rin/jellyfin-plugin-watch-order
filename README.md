@@ -178,7 +178,7 @@ The Release workflow checks the version matches, runs the tests, builds the plug
 
 ## Contributing
 
-Bug reports, fixes and new orders are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how, and what to expect.
+Bug reports, fixes and new orders are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how, and what to expect. For questions, ideas, or to share an order you've made, use [Discussions](https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/discussions).
 
 ## How this was built
 

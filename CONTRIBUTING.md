@@ -2,6 +2,16 @@
 
 Thanks for helping. Watch Order is maintained in spare time, so pull requests and issues are looked at when time allows, not on a schedule. Clear reports and small, focused pull requests are the quickest to get in.
 
+## Questions, ideas and sharing orders
+
+Use [Discussions](https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/discussions) rather than an issue:
+
+- **Q&A** for how-tos and "is this a bug?" questions. Other users often know the answer, so it's usually the quickest place to get help.
+- **Share an order** to post a link to an order file you've made. Anyone can add it with **Import → from a link** in the Dashboard.
+- **Ideas** for feature suggestions.
+
+Discussions are community help; the maintainer drops in when time allows.
+
 ## Reporting a bug
 
 Open an issue with the **Bug report** form. It asks for what's needed to look into it: your Jellyfin and plugin versions, where it happened (web app, which browser or app), what you expected and what happened, and any lines from the Jellyfin log that start with `Watch Order`.
