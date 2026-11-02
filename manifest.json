@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Verdancy-Rin/jellyfin-plugin-watch-order/main/images/watch-order.png",
     "versions": [
       {
+        "version": "1.1.0.0",
+        "changelog": "- New: optional but recommended entries. Order authors can mark optional entries (filler, side stories, films) that are worth watching anyway, and each viewer chooses per order to watch all optional entries, skip them but keep the recommended ones, or skip them all. Progress, Up next, autoplay and playlists all follow the choice. Anyone who had chosen to skip optional entries keeps skipping them all.\n- New ready-made orders under Anime: Naruto (Naruto and Naruto Shippuden) and Naruto and Boruto (continuing into Boruto: Naruto Next Generations), with every film placed in story order and the filler worth watching marked recommended.\n",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/releases/download/v1.1.0.0/watch-order_1.1.0.0.zip",
+        "checksum": "eecc2430ba908cec4aa8f11530e45997",
+        "timestamp": "2026-11-02T16:24:55Z"
+      },
+      {
         "version": "1.0.0.0",
         "changelog": "First public release.\n- Watch orders that mix films, episodes, episode ranges and whole seasons from any number of series, matched to your library by TMDb, IMDb and TVDb ids (or title and year).\n- A Watch Orders page in the web app, an \"Up Next in Your Watch Orders\" home screen row, and a \"Part of a watch order\" section on film, episode and series pages (these need the File Transformation plugin).\n- Per-user progress from Jellyfin's own watched status, watch-throughs (count what you've seen, or start fresh), optional entries each user can skip, and autoplay that follows the order.\n- A playlist of what's left in each order you follow, so any Jellyfin app can carry it on.\n- A visual order builder, import from files, links or pasted JSON, and ready-made orders: the MCU, Star Wars, Cardcaptor Sakura and Urusei Yatsura (1981).\n- Viewer stats for admins.\n",
         "targetAbi": "12.1.0.0",
