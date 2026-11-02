@@ -163,18 +163,31 @@ The Release workflow checks the version matches, runs the tests, builds the plug
 
 ## Roadmap
 
-- [x] **Item pages** show the orders an item is in, with Play from here.
-- [x] **Viewer stats** for admins.
-- [x] **Playlists of what's left**, per user, kept up to date, so orders work in any Jellyfin app.
+Next up:
+
+- [ ] **Structure and artwork for long orders**
+  - **Sections:** optional headings such as "Phase One" or "Season 2", shown as dividers that can be collapsed, with the page opening at the section you're up to.
+  - **Seasons as one row:** a whole-season entry shows as a single row ("Season 2 · 12 of 26 watched") that expands to its episodes.
+  - **Artwork:** a backdrop on each order's page and artwork on its tile, built from the order's own films and shows, or an image the order chooses.
+  - **Jump to Up next**, and search within an order.
+
+Later, maybe:
+
+- [ ] Extra order sources (community indexes an admin can add, like plugin repositories). Not planned for now; anyone can share orders by link.
+
+Done:
+
 - [x] **Visual order builder** with library, metadata-provider and collection sources.
 - [x] **User page** in the web app: browse orders, see progress, play the next item.
 - [x] **Home screen row** with per-user choice of which orders appear.
 - [x] **Watch-throughs**: count earlier viewing or start fresh, start over, re-watch counter.
 - [x] **Autoplay follows the order**: when something in an order you're following starts, queue the order's next item after it.
-- [x] **Import from a link**, and **ready-made orders** bundled with the plugin.
-- [x] **Optional but recommended entries**, with a three-way choice per order for each viewer.
-- [ ] Extra order sources (community indexes an admin can add, like plugin repositories). Not planned for now; anyone can share orders by link.
 - [x] **Optional entries**, with a per-user, per-order choice to skip them.
+- [x] **Optional but recommended entries**, with a three-way choice per order for each viewer.
+- [x] **Playlists of what's left**, per user, kept up to date, so orders work in any Jellyfin app.
+- [x] **Item pages** show the orders an item is in, with Continue where you left off or Play from the start.
+- [x] **Viewer stats** for admins.
+- [x] **Import from a link**, and **ready-made orders** bundled with the plugin.
 - [x] **Resolver tests** against an in-memory library that follows Jellyfin's lookup rules.
 
 ## Contributing
