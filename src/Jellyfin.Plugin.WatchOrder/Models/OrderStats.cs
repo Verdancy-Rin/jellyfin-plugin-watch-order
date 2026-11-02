@@ -58,6 +58,9 @@ public sealed class UserOrderStats
     /// <summary>Gets or sets when the user last played anything in the order (UTC), if ever.</summary>
     public DateTime? LastWatched { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether the user skips optional entries.</summary>
+    /// <summary>Gets or sets a value indicating whether the user skips some or all optional entries.</summary>
     public bool SkipOptional { get; set; }
+
+    /// <summary>Gets or sets what the user does with optional entries.</summary>
+    public Services.OptionalMode OptionalMode { get; set; }
 }

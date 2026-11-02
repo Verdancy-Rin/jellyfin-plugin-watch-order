@@ -5,14 +5,14 @@ Shareable watch order files. Each file is one order; the format is described in 
 - `mcu/`: the Marvel Cinematic Universe in release order. One order per phase (`mcu-phase-1` to `mcu-phase-6`), The Infinity Saga (Phases One to Three), The Multiverse Saga (Phases Four to Six), and `mcu-complete` with everything. Disney+ series are included as whole seasons; animated alternate-universe series, shorts and standalone specials are marked optional.
 - `star-wars/`: `star-wars-skywalker-saga` (Episodes I to IX) and `star-wars-complete` (every canon film and series in story order, following StarWars.com's timeline). The Tales anthologies and Resistance are optional.
 - `cardcaptor-sakura/`: the 1998 series and Clear Card with their films and specials placed in story order (a three-season layout for the 1998 series, one season for Clear Card, plus specials).
-- `naruto/`: `naruto` (Naruto and Naruto Shippuden) and `naruto-and-boruto` (continuing into Boruto: Naruto Next Generations), in story order with all eleven films. Filler and most films are optional, with notes marking the ones worth watching.
+- `naruto/`: `naruto` (Naruto and Naruto Shippuden) and `naruto-and-boruto` (continuing into Boruto: Naruto Next Generations), in story order with all eleven films. Filler and most films are optional, and the ones worth watching are marked recommended.
 - `steven-universe/`: the series, the film and Steven Universe Future, in story order.
 - `urusei-yatsura/`: the 1981 series with its OVAs and films placed in story order (episode numbers follow a four-season layout plus specials).
 - `examples/` holds small orders that show the format.
 
 Every file here is checked by the test suite, so a broken order fails CI. Films and series are matched by TMDb id, so they match whatever your files are called. Titles and years are there as a fallback and for reading. Entries that aren't released yet say so in their note and show as "not in your library" until they are.
 
-The MCU, Star Wars, Cardcaptor Sakura and Urusei Yatsura orders come with the plugin: open Dashboard → Watch Order → **Ready-made orders** and add the ones you want. [`ready-made.json`](ready-made.json) lists which orders are bundled, and in what order they're shown. For any other file here, use **Import** with the file, its link, or its contents.
+The MCU, Star Wars, Cardcaptor Sakura, Naruto and Urusei Yatsura orders come with the plugin: open Dashboard → Watch Order → **Ready-made orders** and add the ones you want. [`ready-made.json`](ready-made.json) lists which orders are bundled, and in what order they're shown. For any other file here, use **Import** with the file, its link, or its contents.
 
 ## Contributing an order
 

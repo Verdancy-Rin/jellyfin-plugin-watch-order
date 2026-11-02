@@ -89,6 +89,13 @@ public sealed class WatchOrderEntry
     /// </summary>
     public bool Optional { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether an optional entry is recommended: filler or a side story that's worth
+    /// watching. Viewers can skip optional entries but keep the recommended ones. Only applies to optional entries;
+    /// older plugin versions treat recommended entries as plain optional ones.
+    /// </summary>
+    public bool Recommended { get; set; }
+
     /// <summary>Gets or sets fields this version of the plugin doesn't know; kept as they are.</summary>
     [System.Text.Json.Serialization.JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement>? Extra { get; set; }

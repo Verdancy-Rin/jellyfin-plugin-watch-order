@@ -29,7 +29,9 @@ An order is a JSON file with a list of entries, watched top to bottom. Comments 
 | `episodes` | `series` or `providerIds`, `season`, `from`, `to` | every episode from `from` to `to` (inclusive) |
 | `season` | `series` or `providerIds`, `season` | every episode in that season that's in your library |
 
-Every entry can also have `year` (used to tell remakes and reboots apart), `note` (shown beside it) and `optional: true` for filler, spin-offs or side stories. Each user chooses per order whether to skip optional entries; when they do, those entries don't count towards progress and are never queued or autoplayed.
+Every entry can also have `year` (used to tell remakes and reboots apart), `note` (shown beside it) and `optional: true` for filler, spin-offs or side stories. An optional entry that's worth watching anyway can also have `recommended: true`.
+
+Each user chooses per order what to do with optional entries: watch them all, skip them but keep the recommended ones, or skip them all. Skipped entries don't count towards progress and are never queued or autoplayed. Older plugin versions that don't know `recommended` treat those entries as plain optional ones.
 
 Season `0` is Specials.
 

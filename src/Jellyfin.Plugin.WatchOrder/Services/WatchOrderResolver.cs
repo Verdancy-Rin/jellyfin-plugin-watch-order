@@ -47,7 +47,8 @@ public class WatchOrderResolver
 
         foreach (var step in WatchOrderParser.Expand(definition))
         {
-            var optional = step.EntryIndex < definition.Entries.Count && definition.Entries[step.EntryIndex].Optional;
+            var entry = step.EntryIndex < definition.Entries.Count ? definition.Entries[step.EntryIndex] : null;
+            var optional = (entry?.Optional ?? false, entry is { Optional: true, Recommended: true });
             switch (step.Type)
             {
                 case WatchOrderEntryType.Movie:
@@ -107,7 +108,7 @@ public class WatchOrderResolver
         return label;
     }
 
-    private static void Add(ResolvedWatchOrder order, WatchOrderStep step, string label, BaseItem? item, MatchStatus status, bool optional)
+    private static void Add(ResolvedWatchOrder order, WatchOrderStep step, string label, BaseItem? item, MatchStatus status, (bool Optional, bool Recommended) optional)
     {
         order.Steps.Add(new ResolvedStep
         {
@@ -118,7 +119,8 @@ public class WatchOrderResolver
             ItemId = item?.Id,
             Status = item is null ? MatchStatus.Missing : status,
             Note = step.Note,
-            Optional = optional
+            Optional = optional.Optional,
+            Recommended = optional.Recommended
         });
     }
 

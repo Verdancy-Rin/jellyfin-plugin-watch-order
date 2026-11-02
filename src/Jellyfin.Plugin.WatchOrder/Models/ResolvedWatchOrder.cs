@@ -45,6 +45,9 @@ public sealed class ResolvedStep
 
     /// <summary>Gets or sets a value indicating whether the entry this step comes from is optional.</summary>
     public bool Optional { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the entry is optional but recommended.</summary>
+    public bool Recommended { get; set; }
 }
 
 /// <summary>

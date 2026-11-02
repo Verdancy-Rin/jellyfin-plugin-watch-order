@@ -25,6 +25,20 @@ public enum HomeState
     Hidden
 }
 
+/// <summary>What a user does with an order's optional entries.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<OptionalMode>))]
+public enum OptionalMode
+{
+    /// <summary>Watch every entry.</summary>
+    WatchAll,
+
+    /// <summary>Skip optional entries, but keep the ones marked recommended.</summary>
+    KeepRecommended,
+
+    /// <summary>Skip every optional entry.</summary>
+    SkipAll
+}
+
 /// <summary>
 /// A mark the user made on the order page during a fresh run, which overrides what Jellyfin's history says.
 /// </summary>
@@ -254,30 +268,66 @@ public class UserStateStore
         });
     }
 
-    /// <summary>Gets whether the user skips optional entries in an order.</summary>
+    /// <summary>Gets whether the user skips any optional entries in an order.</summary>
     /// <param name="userId">The user.</param>
     /// <param name="orderId">The order.</param>
-    /// <returns><c>true</c> when they skip them.</returns>
-    public bool GetSkipOptional(Guid userId, string orderId) => Load(userId).SkipOptional.TryGetValue(orderId, out var skip) && skip;
+    /// <returns><c>true</c> when they skip some or all of them.</returns>
+    public bool GetSkipOptional(Guid userId, string orderId) => GetOptionalMode(userId, orderId) != OptionalMode.WatchAll;
 
-    /// <summary>Records whether the user skips optional entries in an order.</summary>
+    /// <summary>Records whether the user skips all optional entries in an order.</summary>
     /// <param name="userId">The user.</param>
     /// <param name="orderId">The order.</param>
-    /// <param name="skip">Skip them or not.</param>
+    /// <param name="skip">Skip them all, or watch them all.</param>
     public void SetSkipOptional(Guid userId, string orderId, bool skip)
+        => SetOptionalMode(userId, orderId, skip ? OptionalMode.SkipAll : OptionalMode.WatchAll);
+
+    /// <summary>Gets what the user does with optional entries in an order.</summary>
+    /// <param name="userId">The user.</param>
+    /// <param name="orderId">The order.</param>
+    /// <returns>Their choice; <see cref="OptionalMode.WatchAll"/> when they haven't made one.</returns>
+    public OptionalMode GetOptionalMode(Guid userId, string orderId)
+    {
+        var user = Load(userId);
+        if (user.OptionalMode.TryGetValue(orderId, out var mode))
+        {
+            return mode;
+        }
+
+        // Before recommended entries, the only choice was skipping all optional entries.
+        return user.SkipOptional.TryGetValue(orderId, out var skip) && skip ? OptionalMode.SkipAll : OptionalMode.WatchAll;
+    }
+
+    /// <summary>Records what the user does with optional entries in an order.</summary>
+    /// <param name="userId">The user.</param>
+    /// <param name="orderId">The order.</param>
+    /// <param name="mode">Their choice.</param>
+    public void SetOptionalMode(Guid userId, string orderId, OptionalMode mode)
     {
         Update(userId, user =>
         {
-            if (skip)
+            user.SkipOptional.Remove(orderId);
+            if (mode == OptionalMode.WatchAll)
             {
-                user.SkipOptional[orderId] = true;
+                user.OptionalMode.Remove(orderId);
             }
             else
             {
-                user.SkipOptional.Remove(orderId);
+                user.OptionalMode[orderId] = mode;
             }
         });
     }
+
+    /// <summary>Whether a step is skipped, given what the user does with optional entries.</summary>
+    /// <param name="mode">The user's choice for the order.</param>
+    /// <param name="optional">Whether the step is optional.</param>
+    /// <param name="recommended">Whether it's optional but recommended.</param>
+    /// <returns><c>true</c> when it's skipped.</returns>
+    public static bool IsSkipped(OptionalMode mode, bool optional, bool recommended) => optional && mode switch
+    {
+        OptionalMode.SkipAll => true,
+        OptionalMode.KeepRecommended => !recommended,
+        _ => false
+    };
 
     /// <summary>Gets the user's own autoplay choice, or null when they haven't made one.</summary>
     /// <param name="userId">The user.</param>
@@ -448,8 +498,11 @@ public class UserStateStore
         /// <summary>Gets or sets the current run of each order, keyed by order id.</summary>
         public Dictionary<string, OrderRun> Runs { get; set; } = new(StringComparer.Ordinal);
 
-        /// <summary>Gets or sets the orders in which the user skips optional entries.</summary>
+        /// <summary>Gets or sets the orders in which the user skips optional entries (from before <see cref="OptionalMode"/>).</summary>
         public Dictionary<string, bool> SkipOptional { get; set; } = new(StringComparer.Ordinal);
+
+        /// <summary>Gets or sets what the user does with optional entries, per order; missing means watch them all.</summary>
+        public Dictionary<string, OptionalMode> OptionalMode { get; set; } = new(StringComparer.Ordinal);
 
         /// <summary>Gets or sets whether autoplay follows the user's watch orders; null for the admin's default.</summary>
         public bool? AutoplayFollow { get; set; }

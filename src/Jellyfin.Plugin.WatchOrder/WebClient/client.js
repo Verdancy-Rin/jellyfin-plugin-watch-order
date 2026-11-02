@@ -184,6 +184,8 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
 .${PREFIX}-toolbar { display: flex; gap: .75em; align-items: center; flex-wrap: wrap; }
 .${PREFIX}-toolbar > .checkboxContainer { margin: 0 0 0 .25em; }
 .${PREFIX}-toolbar .emby-checkbox-label { width: auto; }
+.${PREFIX}-optmode { display: inline-flex; align-items: center; gap: .6em; margin-left: .25em; }
+.${PREFIX}-optmode > select.${PREFIX}-optmode-select { width: auto; max-width: 100%; padding: .55em .6em; border-radius: .2em; font: inherit; cursor: pointer; appearance: auto; -webkit-appearance: menulist; }
 .${PREFIX}-playlist { display: inline-flex; align-items: center; gap: .75em; flex-wrap: wrap; }
 .${PREFIX}-playlist > .checkboxContainer { margin: 0 0 0 .25em; }
 .${PREFIX}-playlist-link { text-decoration: underline; }
@@ -1342,7 +1344,7 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
                     </div>
                     <div class="listItemBody ${PREFIX}-step-main">
                         <div class="listItemBodyText ${PREFIX}-step-title">${title}</div>
-                        <div class="listItemBodyText ${PREFIX}-step-sub ${PREFIX}-secondary">${s.Step.Optional ? `<span class="${PREFIX}-tag">${skipped ? 'Optional · skipped' : 'Optional'}</span> ` : ''}${esc(text.sub)}${isNext ? ' · <strong>Up next</strong>' : ''}${resume ? ` · ${Math.round(resume)}% watched` : ''}</div>
+                        <div class="listItemBodyText ${PREFIX}-step-sub ${PREFIX}-secondary">${s.Step.Optional ? `<span class="${PREFIX}-tag${s.Step.Recommended ? ` ${PREFIX}-tag-recommended` : ''}">${['Optional', s.Step.Recommended ? 'recommended' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' · ')}</span> ` : ''}${esc(text.sub)}${isNext ? ' · <strong>Up next</strong>' : ''}${resume ? ` · ${Math.round(resume)}% watched` : ''}</div>
                         ${showNote ? `<div class="${PREFIX}-note ${PREFIX}-secondary">${esc(s.Step.Note)}</div>` : ''}
                     </div>
                     <div class="${PREFIX}-step-actions">
@@ -1402,13 +1404,35 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
                     ${nextStep && showHomeRow ? `<button is="emby-button" type="button" class="emby-button raised" data-wo="toggle-home" aria-pressed="${progress.OnHomeScreen}">
                         <span class="material-icons ${progress.OnHomeScreen ? 'check' : 'add'}" aria-hidden="true"></span><span>${progress.OnHomeScreen ? 'On your home screen' : 'Add to home screen'}</span></button>` : ''}
                     <label class="checkboxContainer"><input type="checkbox" is="emby-checkbox" data-wo="hide-watched" ${hideWatched ? 'checked' : ''}><span>Hide watched</span></label>
-                    ${progress.OptionalCount ? `<label class="checkboxContainer" title="Optional entries are filler or side stories. Skipped ones don't count towards progress and aren't played automatically.">
-                        <input type="checkbox" is="emby-checkbox" data-wo="skip-optional" ${progress.SkipOptional ? 'checked' : ''}><span>Skip optional entries (${progress.OptionalCount})</span></label>` : ''}
+                    ${optionalChoice(progress)}
                     ${playlistToggle(progress, !!nextStep)}
                 </div>
             </div>`;
 
         setView(progress.OrderName, `${head}<ol class="${PREFIX}-steps" aria-label="Viewing order">${rows}</ol>`, true);
+    }
+
+    /**
+     * What to do with optional entries. A checkbox when none are recommended; when some are, a choice of watching
+     * them all, skipping them but keeping the recommended ones, or skipping them all.
+     */
+    function optionalChoice(progress) {
+        if (!progress.OptionalCount) {
+            return '';
+        }
+        const help = 'Optional entries are filler or side stories. Skipped ones don\'t count towards progress and aren\'t played automatically.';
+        if (!progress.RecommendedCount) {
+            return `<label class="checkboxContainer" title="${help}">
+                <input type="checkbox" is="emby-checkbox" data-wo="skip-optional" ${progress.SkipOptional ? 'checked' : ''}><span>Skip optional entries (${progress.OptionalCount})</span></label>`;
+        }
+        const mode = progress.OptionalMode || (progress.SkipOptional ? 'SkipAll' : 'WatchAll');
+        const option = (value, text) => `<option value="${value}"${mode === value ? ' selected' : ''}>${text}</option>`;
+        return `<label class="${PREFIX}-optmode" title="${help}"><span>Optional entries (${progress.OptionalCount})</span>
+            <select class="emby-select-withcolor ${PREFIX}-optmode-select" data-wo="optional-mode">
+                ${option('WatchAll', 'Watch all')}
+                ${option('KeepRecommended', `Skip, but keep the ${progress.RecommendedCount} recommended`)}
+                ${option('SkipAll', 'Skip all')}
+            </select></label>`;
     }
 
     /** "Keep a playlist of what's left", so the order can be carried on from any Jellyfin app, and a link to it. */
@@ -1638,6 +1662,27 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
         }
     }
 
+    async function setOptionalMode(select) {
+        const orderId = currentOrder?.progress.OrderId;
+        if (!orderId) {
+            return;
+        }
+        const previous = currentOrder.progress.OptionalMode;
+        select.disabled = true;
+        try {
+            const progress = await postJson(`WatchOrder/Orders/${encodeURIComponent(orderId)}/OptionalMode`, { mode: select.value });
+            summariesAt = 0;
+            if (stillOn(orderId) && currentOrder) {
+                currentOrder.progress = progress;
+                renderOrder();
+                view.querySelector('[data-wo="optional-mode"]')?.focus();
+            }
+        } catch {
+            select.value = previous || 'WatchAll';
+            select.disabled = false;
+        }
+    }
+
     async function setPlaylist(input) {
         const orderId = currentOrder?.progress.OrderId;
         if (!orderId) {
@@ -1697,6 +1742,10 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
         }
         if (e.target.dataset.wo === 'skip-optional') {
             setSkipOptional(e.target);
+            return;
+        }
+        if (e.target.dataset.wo === 'optional-mode') {
+            setOptionalMode(e.target);
             return;
         }
         if (e.target.dataset.wo === 'playlist') {

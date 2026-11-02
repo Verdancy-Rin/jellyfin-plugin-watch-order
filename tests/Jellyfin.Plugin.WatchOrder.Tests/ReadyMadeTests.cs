@@ -32,7 +32,9 @@ public sealed class ReadyMadeTests : IDisposable
         var groups = ReadyMadeOrders.Load(typeof(ReadyMadeOrders).Assembly);
         Assert.Equal(new[] { "Marvel Cinematic Universe", "Star Wars", "Anime" }, groups.Select(g => g.Name));
         var ids = groups.SelectMany(g => g.Orders).Select(o => o.Id).ToList();
-        Assert.Equal(13, ids.Count);
+        Assert.Equal(15, ids.Count);
+        Assert.Contains("naruto", ids);
+        Assert.Contains("naruto-and-boruto", ids);
         Assert.Contains("mcu-phase-1", ids);
         Assert.Contains("star-wars-complete", ids);
         Assert.Contains("cardcaptor-sakura", ids);
@@ -48,7 +50,7 @@ public sealed class ReadyMadeTests : IDisposable
         // Every file in a bundled folder should be offered, so a new order isn't forgotten from ready-made.json.
         var root = FindRepo();
         var listed = ReadyMadeOrders.Load(typeof(ReadyMadeOrders).Assembly).SelectMany(g => g.Orders).Select(o => o.Id).ToHashSet();
-        foreach (var folder in new[] { "mcu", "star-wars", "cardcaptor-sakura", "urusei-yatsura" })
+        foreach (var folder in new[] { "mcu", "star-wars", "cardcaptor-sakura", "naruto", "urusei-yatsura" })
         {
             foreach (var file in Directory.EnumerateFiles(Path.Combine(root, "orders", folder), "*.json"))
             {

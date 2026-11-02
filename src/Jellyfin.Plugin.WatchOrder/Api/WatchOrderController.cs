@@ -218,6 +218,28 @@ public class WatchOrderController : ControllerBase
         return GetOrder(id);
     }
 
+    /// <summary>
+    /// Sets what the current user does with an order's optional entries: <c>WatchAll</c>, <c>KeepRecommended</c>
+    /// (skip optional entries but keep the recommended ones) or <c>SkipAll</c>.
+    /// </summary>
+    /// <param name="id">The order id.</param>
+    /// <param name="mode">The choice.</param>
+    /// <returns>The user's progress afterwards.</returns>
+    [HttpPost("Orders/{id}/OptionalMode")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<UserProgress> SetOptionalMode([FromRoute] string id, [FromQuery] OptionalMode mode)
+    {
+        if (_service.Get(id) is null || CurrentUserId() is not { } userId)
+        {
+            return NotFound();
+        }
+
+        _userState.SetOptionalMode(userId, id, mode);
+        _playlists.Request(userId, id);
+        return GetOrder(id);
+    }
+
     /// <summary>Undoes the current user's last fresh start of an order, going back to the watch-through before it.</summary>
     /// <param name="id">The order id.</param>
     /// <returns>The user's progress afterwards, or 409 when there is nothing to undo.</returns>

@@ -87,7 +87,7 @@ export default function (view) {
     function cleanEntry(entry) {
         const out = { ...(entry._extra || {}) };
         for (const [key, value] of Object.entries(entry)) {
-            if (key.startsWith('_') || value === null || value === undefined || value === '' || (key === 'optional' && value !== true)) {
+            if (key.startsWith('_') || value === null || value === undefined || value === '' || (key === 'optional' && value !== true) || (key === 'recommended' && (value !== true || entry.optional !== true))) {
                 continue;
             }
             if (key === 'providerIds' && Object.keys(value).length === 0) {
@@ -100,7 +100,7 @@ export default function (view) {
 
     // Fields the builder edits. Anything else in an order (from a newer plugin, or another tool) is kept as it is.
     const KNOWN_ORDER_FIELDS = ['schemaversion', 'id', 'name', 'description', 'author', 'version', 'source', 'entries'];
-    const KNOWN_ENTRY_FIELDS = ['type', 'title', 'year', 'series', 'season', 'episode', 'from', 'to', 'providerids', 'note', 'optional'];
+    const KNOWN_ENTRY_FIELDS = ['type', 'title', 'year', 'series', 'season', 'episode', 'from', 'to', 'providerids', 'note', 'optional', 'recommended'];
 
     function otherFields(obj, known) {
         const out = {};
@@ -135,7 +135,8 @@ export default function (view) {
                     to: pick(e, 'to'),
                     providerIds: { ...(pick(e, 'providerIds') || {}) },
                     note: pick(e, 'note'),
-                    optional: pick(e, 'optional') === true
+                    optional: pick(e, 'optional') === true,
+                    recommended: pick(e, 'optional') === true && pick(e, 'recommended') === true
                 })
             }))
         };
@@ -301,7 +302,7 @@ export default function (view) {
                 <th scope="row">${esc(u.UserName)}</th>
                 <td><span class="wo-stat wo-stat-${esc(u.Status)}">${STATUS_TEXT[u.Status] || esc(u.Status)}</span></td>
                 <td><div class="wo-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${u.AvailableCount}" aria-valuenow="${u.WatchedCount}" aria-label="${esc(u.UserName)}'s progress"><div style="width:${pct}%"></div></div>
-                    <span class="wo-muted">${u.WatchedCount} of ${u.AvailableCount}${u.SkipOptional ? ', skipping optional' : ''}</span></td>
+                    <span class="wo-muted">${u.WatchedCount} of ${u.AvailableCount}${u.OptionalMode === 'KeepRecommended' ? ', skipping optional (keeping recommended)' : u.SkipOptional ? ', skipping optional' : ''}</span></td>
                 <td>${through}${finished}</td>
                 <td>${u.Next ? esc(u.Next.DisplayName || u.Next.Label) : '<span class="wo-muted">—</span>'}</td>
                 <td>${esc(ago(u.LastWatched))}</td>
@@ -733,7 +734,7 @@ export default function (view) {
             const status = entryStatus(e);
             const ids = Object.entries(e.providerIds || {}).map(([k, v]) => `${k} ${v}`).join(' · ');
             return `
-                <li class="wo-entry${e.optional ? ' wo-entry-optional' : ''}" data-index="${i}">
+                <li class="wo-entry${e.optional ? ' wo-entry-optional' : ''}${e.optional && e.recommended ? ' wo-entry-recommended' : ''}" data-index="${i}">
                     <span class="wo-handle material-icons drag_indicator" title="Drag to reorder" aria-hidden="true"></span>
                     <span class="wo-pos">${i + 1}</span>
                     <div class="wo-entry-main">
@@ -744,6 +745,9 @@ export default function (view) {
                             ${ids ? `<span class="wo-muted">${esc(ids)}</span>` : ''}
                             <label class="wo-optional" title="Filler or a side story. Each user chooses whether to skip optional entries.">
                                 <input type="checkbox" data-optional="${i}" ${e.optional ? 'checked' : ''} aria-label="Entry ${i + 1} is optional" /> Optional
+                            </label>
+                            <label class="wo-optional wo-recommended" title="Optional, but worth watching. Viewers can skip optional entries but keep the recommended ones." ${e.optional ? '' : 'hidden'}>
+                                <input type="checkbox" data-recommended="${i}" ${e.optional && e.recommended ? 'checked' : ''} aria-label="Entry ${i + 1} is recommended" /> Recommended
                             </label>
                         </div>
                         <input class="wo-note" data-note="${i}" value="${esc(e.note || '')}" placeholder="Add a note (optional)" aria-label="Note for entry ${i + 1}" />
@@ -800,9 +804,30 @@ export default function (view) {
         if (index !== undefined) {
             const entry = draft.entries[Number(index)];
             entry.optional = e.target.checked;
-            e.target.closest('.wo-entry')?.classList.toggle('wo-entry-optional', entry.optional);
+            const row = e.target.closest('.wo-entry');
+            row?.classList.toggle('wo-entry-optional', entry.optional);
+            const recommended = row?.querySelector('.wo-recommended');
+            if (recommended) {
+                recommended.hidden = !entry.optional;
+            }
+            if (!entry.optional && entry.recommended) {
+                // Recommended only means something for optional entries.
+                entry.recommended = false;
+                recommended.querySelector('input').checked = false;
+                row.classList.remove('wo-entry-recommended');
+            }
             markChanged(false);
             setStatus(`"${entryLabel(entry)}" is ${entry.optional ? 'now optional' : 'no longer optional'}.`);
+            return;
+        }
+
+        const recIndex = e.target.dataset.recommended;
+        if (recIndex !== undefined) {
+            const entry = draft.entries[Number(recIndex)];
+            entry.recommended = e.target.checked;
+            e.target.closest('.wo-entry')?.classList.toggle('wo-entry-recommended', entry.recommended);
+            markChanged(false);
+            setStatus(`"${entryLabel(entry)}" is ${entry.recommended ? 'now optional but recommended' : 'no longer recommended'}.`);
         }
     }
 

@@ -33,7 +33,8 @@
         "year": { "type": "integer", "minimum": 1880 },
         "providerIds": { "$ref": "#/$defs/providerIds" },
         "note": { "type": "string" },
-        "optional": { "type": "boolean", "description": "Filler or a side story. Each user chooses per order whether to skip optional entries." }
+        "optional": { "type": "boolean", "description": "Filler or a side story. Each user chooses per order whether to skip optional entries." },
+        "recommended": { "type": "boolean", "description": "For an optional entry: worth watching anyway. Viewers can skip optional entries but keep the recommended ones. Needs optional: true." }
       }
     },
     "entry": {

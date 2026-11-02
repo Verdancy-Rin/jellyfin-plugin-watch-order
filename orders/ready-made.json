@@ -26,6 +26,8 @@
       "name": "Anime",
       "orders": [
         "cardcaptor-sakura/cardcaptor-sakura.json",
+        "naruto/naruto.json",
+        "naruto/naruto-and-boruto.json",
         "urusei-yatsura/urusei-yatsura-1981.json"
       ]
     }

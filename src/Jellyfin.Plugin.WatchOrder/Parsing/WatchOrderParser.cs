@@ -144,6 +144,11 @@ public static partial class WatchOrderParser
                     break;
             }
 
+            if (e.Recommended && !e.Optional)
+            {
+                errors.Add($"{at}: recommended only applies to optional entries; add \"optional\": true, or remove recommended.");
+            }
+
             if (e.Season is < 0 || e.Episode is < 0 || e.From is < 0)
             {
                 errors.Add($"{at}: season and episode numbers cannot be negative.");

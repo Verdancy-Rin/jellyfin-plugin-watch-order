@@ -38,8 +38,15 @@ public class WatchOrderProgressService
         }
 
         var run = _userState.GetRun(userId, order.Id);
-        var skipOptional = _userState.GetSkipOptional(userId, order.Id);
-        var progress = new UserProgress { OrderId = order.Id, OrderName = order.Name, OrderDescription = order.Description, SkipOptional = skipOptional };
+        var mode = _userState.GetOptionalMode(userId, order.Id);
+        var progress = new UserProgress
+        {
+            OrderId = order.Id,
+            OrderName = order.Name,
+            OrderDescription = order.Description,
+            SkipOptional = mode != OptionalMode.WatchAll,
+            OptionalMode = mode
+        };
 
         foreach (var step in order.Steps)
         {
@@ -59,7 +66,7 @@ public class WatchOrderProgressService
                 available = true;
             }
 
-            progress.Steps.Add(new UserStep { Step = step, Played = played, Available = available, Skipped = skipOptional && step.Optional });
+            progress.Steps.Add(new UserStep { Step = step, Played = played, Available = available, Skipped = UserStateStore.IsSkipped(mode, step.Optional, step.Recommended) });
         }
 
         Tally(progress);
@@ -88,6 +95,7 @@ public class WatchOrderProgressService
         progress.AvailableCount = counted.Count;
         progress.WatchedCount = counted.Count(s => s.Played);
         progress.OptionalCount = progress.Steps.Count(s => s.Available && s.Step.Optional);
+        progress.RecommendedCount = progress.Steps.Count(s => s.Available && s.Step.Optional && s.Step.Recommended);
         progress.SkippedCount = progress.Steps.Count(s => s.Available && s.Skipped);
         progress.Next = progress.Steps.FirstOrDefault(s => !s.Played && !s.Skipped && s.Step.ItemId is not null);
     }

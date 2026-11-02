@@ -85,6 +85,7 @@ public class OrderStatsService
                     Next = progress.Next?.Step,
                     LastWatched = lastWatched,
                     SkipOptional = progress.SkipOptional,
+                    OptionalMode = progress.OptionalMode,
                     Status = StatusOf(progress.Next is null && progress.AvailableCount > 0, progress.WatchedCount, lastWatched, now)
                 };
                 stats.Users.Add(row);

@@ -70,6 +70,9 @@
             .wo-chip { border: 1px solid var(--wo-border); border-radius: 999px; padding: 0 .55em; font-size: .9em; }
             .wo-optional { display: inline-flex; align-items: center; gap: .3em; cursor: pointer; margin-left: auto; white-space: nowrap; }
             .wo-optional input { margin: 0; cursor: pointer; }
+            .wo-recommended[hidden] { display: none; }
+            .wo-recommended { margin-left: .75em; }
+            .wo-entry-recommended .wo-entry-label::after { content: "Optional · recommended" !important; }
             .wo-entry-optional .wo-entry-label::after { content: "Optional"; margin-left: .5em; font-size: .75em; font-weight: normal; border: 1px dashed currentColor; border-radius: 999px; padding: 0 .5em; opacity: .8; vertical-align: .1em; }
             .wo-status::before { content: "●"; margin-right: .3em; }
             .wo-status.wo-ok::before { color: var(--wo-ok); }

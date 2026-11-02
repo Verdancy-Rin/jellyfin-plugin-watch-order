@@ -87,11 +87,17 @@ public sealed class UserProgress
     /// <summary>Gets or sets the user's playlist of what's left (filled in by the API).</summary>
     public PlaylistInfo? Playlist { get; set; }
 
-    /// <summary>Gets or sets a value indicating whether the user skips optional entries in this order.</summary>
+    /// <summary>Gets or sets a value indicating whether the user skips some or all optional entries in this order.</summary>
     public bool SkipOptional { get; set; }
+
+    /// <summary>Gets or sets what the user does with optional entries: watch all, keep recommended, or skip all.</summary>
+    public Services.OptionalMode OptionalMode { get; set; }
 
     /// <summary>Gets or sets how many optional items in the order are in the library.</summary>
     public int OptionalCount { get; set; }
+
+    /// <summary>Gets or sets how many of those optional items are recommended.</summary>
+    public int RecommendedCount { get; set; }
 
     /// <summary>Gets or sets how many items are skipped because they're optional.</summary>
     public int SkippedCount { get; set; }
