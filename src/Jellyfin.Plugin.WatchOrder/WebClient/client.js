@@ -203,7 +203,7 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
 
 .${PREFIX}-steps { list-style: none; margin: 0; padding: 0; }
 .${PREFIX}-steps > .${PREFIX}-step { display: flex; align-items: center; gap: .85em; padding: .6em .4em; cursor: default; overflow: visible; }
-:where(.${PREFIX}-step.${PREFIX}-is-next) { background: var(--jf-palette-action-selected, rgba(128,128,128,.16));
+:where(.${PREFIX}-step.${PREFIX}-is-next > .${PREFIX}-row-body) { background: var(--jf-palette-action-selected, rgba(128,128,128,.16));
   box-shadow: inset 3px 0 0 var(--jf-palette-primary-main, #00a4dc); }
 .${PREFIX}-step.${PREFIX}-is-missing, .${PREFIX}-step.${PREFIX}-is-skipped { opacity: .55; }
 .${PREFIX}-tag { display: inline-block; border: 1px solid currentColor; border-radius: 999px; padding: 0 .5em; font-size: .85em; line-height: 1.4; margin-right: .2em; }
@@ -212,8 +212,14 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
   background: rgba(128,128,128,.2) center / cover no-repeat; }
 .${PREFIX}-thumb > .itemProgressBar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; }
 .${PREFIX}-thumb > .itemProgressBar > .itemProgressBarForeground { position: absolute; left: 0; top: 0; height: 100%; }
-.${PREFIX}-step > .${PREFIX}-step-main { flex: 1; min-width: 0; padding: 0; }
-.${PREFIX}-step-title { font-weight: 600; overflow-wrap: anywhere; }
+.${PREFIX}-step > .${PREFIX}-step-main, .${PREFIX}-row-body > .${PREFIX}-step-main { flex: 1; min-width: 0; padding: 0; }
+/* A film's or episode's picture, text and buttons, beside its place on the timeline. The Up next highlight goes on
+   this, so it starts clear of the timeline (and of film icons, which are wider than its dots). */
+/* Season posters line up with film and episode pictures, which sit .5em in (the row body's padding less its margin). */
+.${PREFIX}-group-row > .${PREFIX}-poster { margin-left: .5em; }
+.${PREFIX}-row-body { flex: 1; min-width: 0; display: flex; align-items: center; gap: .85em; align-self: stretch; margin: -.3em 0 -.3em -.3em; padding: .3em .2em .3em .8em;
+  border-radius: .4em; }
+.${PREFIX}-step-title { font-weight: 600; overflow-wrap: break-word; }
 .${PREFIX}-step-title a { color: inherit; text-decoration: none; }
 .${PREFIX}-step-title a:hover, .${PREFIX}-step-title a:focus-visible { text-decoration: underline; }
 .${PREFIX}-step-sub { font-size: .87em; }
@@ -253,6 +259,190 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
 .${PREFIX}-hcard-removed { display: flex; flex-direction: column; justify-content: center; gap: .6em; padding: 1em;
   border: 1px dashed rgba(128,128,128,.5); border-radius: .3em; aspect-ratio: 16 / 9; box-sizing: border-box; height: auto; }
 
+/* Order page: header with artwork, sections, season rows. */
+.${PREFIX}-order-view .${PREFIX}-bar h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.${PREFIX}-order-view .${PREFIX}-bar { margin-bottom: .4em; }
+/* On an order's page the header is wider than the list below it, like a banner, and grows with the screen,
+   so the backdrop has room; the back arrow and list keep the usual reading width. */
+.${PREFIX}-view.${PREFIX}-order-view:not(.${PREFIX}-wide) .${PREFIX}-body,
+.${PREFIX}-view.${PREFIX}-order-view:not(.${PREFIX}-wide) .${PREFIX}-bar { max-width: 92em; }
+.${PREFIX}-order-view .${PREFIX}-tabs, .${PREFIX}-order-view .${PREFIX}-list { max-width: 76em; margin-left: auto; margin-right: auto; }
+.${PREFIX}-hero { position: relative; isolation: isolate; border-radius: .6em; overflow: hidden; margin-bottom: 1.25em; min-height: clamp(22em, 30vw, 34em); display: flex; align-items: flex-end; }
+:where(.${PREFIX}-hero) { background: rgba(128,128,128,.12); }
+.${PREFIX}-hero:not(.${PREFIX}-hero-plain) { color: #fff; }
+.${PREFIX}-hero:not(.${PREFIX}-hero-plain) :where(.${PREFIX}-desc, .${PREFIX}-count, .${PREFIX}-secondary) { color: rgba(255,255,255,.82); }
+.${PREFIX}-hero-plain { min-height: 0; }
+.${PREFIX}-hero-layers, .${PREFIX}-hero-layer, .${PREFIX}-hero-scrim { position: absolute; inset: 0; }
+.${PREFIX}-hero-layers { z-index: -2; }
+.${PREFIX}-hero-layer { background: center 25% / cover no-repeat; opacity: 0; transition: opacity 1.6s ease; }
+.${PREFIX}-hero-layer.${PREFIX}-on { opacity: 1; }
+.${PREFIX}-hero-layer.${PREFIX}-instant { transition: none; }
+.${PREFIX}-hero-scrim { z-index: -1; background: linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.62) 45%, rgba(0,0,0,.12) 100%), linear-gradient(to right, rgba(0,0,0,.55), rgba(0,0,0,0) 70%); }
+.${PREFIX}-hero-plain .${PREFIX}-hero-scrim { display: none; }
+.${PREFIX}-hero-content { width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 1.5em 2.5em; align-items: flex-end; padding: 8em 2em 2em; }
+.${PREFIX}-hero-plain .${PREFIX}-hero-content { padding-top: 1.25em; }
+.${PREFIX}-hero-main { flex: 999 1 26em; min-width: 0; display: flex; flex-direction: column; gap: .7em; }
+.${PREFIX}-hero-title { font-size: clamp(1.8em, 4vw, 2.8em); font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+.${PREFIX}-hero .${PREFIX}-desc { -webkit-line-clamp: 3; max-width: 46em; font-size: .95em; }
+.${PREFIX}-hero .${PREFIX}-progress { max-width: 32em; }
+.${PREFIX}-hero .${PREFIX}-toolbar:empty { display: none; }
+.${PREFIX}-options { font-size: .95em; }
+.${PREFIX}-nextcard { flex: 1 1 17em; max-width: 24em; border-radius: .5em; overflow: hidden; box-shadow: 0 .4em 1.4em rgba(0,0,0,.35); }
+:where(.${PREFIX}-nextcard) { background: rgba(22,22,22,.9); color: #fff; }
+:where(.${PREFIX}-hero-plain .${PREFIX}-nextcard) { background: rgba(128,128,128,.14); color: inherit; box-shadow: none; }
+.${PREFIX}-nextcard-img { position: relative; aspect-ratio: 16 / 9; background: rgba(128,128,128,.25) center / cover no-repeat; }
+.${PREFIX}-nextcard-img > .itemProgressBar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; }
+.${PREFIX}-nextcard-img > .itemProgressBar > .itemProgressBarForeground { position: absolute; left: 0; top: 0; height: 100%; }
+.${PREFIX}-nextcard-body { padding: .9em 1em 1em; display: flex; flex-direction: column; gap: .3em; }
+.${PREFIX}-nextcard-label { font-size: .75em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+:where(.${PREFIX}-nextcard-label) { color: var(--jf-palette-primary-main, #00a4dc); }
+.${PREFIX}-nextcard-title { font-weight: 600; font-size: 1.1em; overflow-wrap: anywhere; }
+.${PREFIX}-nextcard-sub { font-size: .9em; }
+:where(.${PREFIX}-nextcard .${PREFIX}-secondary) { color: rgba(255,255,255,.75); }
+:where(.${PREFIX}-hero-plain .${PREFIX}-nextcard .${PREFIX}-secondary) { color: var(--jf-palette-text-secondary, inherit); }
+.${PREFIX}-nextcard .emby-button { margin-top: .5em !important; justify-content: center; }
+.${PREFIX}-nextcard-done .${PREFIX}-nextcard-body { gap: .6em; }
+
+.${PREFIX}-tabs { display: flex; flex-wrap: wrap; gap: .6em; align-items: center; margin: 0 0 .8em; }
+.${PREFIX}-tabs-list { display: flex; flex-wrap: wrap; gap: .5em; flex: 1 1 auto; }
+.${PREFIX}-tab { font: inherit; cursor: pointer; border-radius: 999px; padding: .4em 1em; min-height: 2.75em; border: 1px solid rgba(128,128,128,.45);
+  background: none; color: inherit; display: inline-flex; gap: .5em; align-items: center; }
+.${PREFIX}-tab:hover, .${PREFIX}-tab:focus-visible { background: rgba(128,128,128,.15); outline: none; }
+:where(.${PREFIX}-tab-here) { border-color: var(--jf-palette-primary-main, #00a4dc); box-shadow: inset 0 0 0 1px var(--jf-palette-primary-main, #00a4dc); }
+.${PREFIX}-tab-status { font-size: .8em; opacity: .75; }
+.${PREFIX}-search { flex: 0 1 18em; margin-left: auto; display: flex; align-items: center; gap: .4em; border: 1px solid rgba(128,128,128,.45);
+  border-radius: 999px; padding: 0 .9em; min-height: 2.75em; box-sizing: border-box; }
+.${PREFIX}-search > .material-icons { opacity: .7; font-size: 1.2em; }
+.${PREFIX}-search input { flex: 1; min-width: 0; background: none; border: 0; color: inherit; font: inherit; outline: none; padding: .5em 0; }
+:where(.${PREFIX}-search:focus-within) { border-color: var(--jf-palette-primary-main, #00a4dc); }
+.${PREFIX}-search-count { margin: .2em 0 .6em; }
+
+.${PREFIX}-section { border-radius: .5em; margin-bottom: .6em; }
+:where(.${PREFIX}-section:not(.${PREFIX}-section-plain)) { background: rgba(128,128,128,.07); border: 1px solid rgba(128,128,128,.18); }
+.${PREFIX}-section-head { margin: 0; font-size: inherit; font-weight: inherit; }
+.${PREFIX}-section-toggle { width: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: .4em .8em; padding: .7em 1em; min-height: 3.6em;
+  background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: .5em; box-sizing: border-box; }
+.${PREFIX}-section-toggle:hover, .${PREFIX}-section-toggle:focus-visible { background: rgba(128,128,128,.12); outline: none; }
+.${PREFIX}-section-name { font-size: 1.2em; font-weight: 600; flex: 1 1 auto; }
+.${PREFIX}-section-summary { font-size: .88em; }
+.${PREFIX}-section-toggle > .${PREFIX}-progress { width: 8em; flex: none; }
+.${PREFIX}-section.${PREFIX}-open:not(.${PREFIX}-section-plain) > .${PREFIX}-rows { border-top: 1px solid rgba(128,128,128,.18); padding: .3em .4em .5em; }
+
+.${PREFIX}-rows, .${PREFIX}-episodes { list-style: none; margin: 0; padding: 0; }
+.${PREFIX}-view { --${PREFIX}-line: #3a3a3a; --${PREFIX}-done: var(--jf-palette-primary-main, #00a4dc); --${PREFIX}-indent: 32px; }
+/* A solid colour, so overlapping pieces of the line don't show as darker or lighter dashes. */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .${PREFIX}-view { --${PREFIX}-line: color-mix(in srgb, var(--jf-palette-text-primary, #fff) 20%, var(--jf-palette-background-default, #101010)); }
+}
+/* The timeline is laid out in px so the curves into and out of an open season row line up exactly:
+   each row's marker column is centred 20px from the row's left edge, and a season's episodes are indented by --indent. */
+.${PREFIX}-row { display: flex; align-items: center; gap: .85em; padding: .5em .4em .5em 8px; overflow: visible; cursor: default; border-radius: .35em; }
+/* Jellyfin's own .listItem padding loads after this and would win; this keeps the marker column where the bends expect it. */
+.${PREFIX}-view .${PREFIX}-row { padding-left: 8px; }
+.${PREFIX}-mark { width: 24px; align-self: stretch; flex: none; display: flex; align-items: center; justify-content: center; position: relative; }
+.${PREFIX}-mark::before { content: ''; position: absolute; top: -.5em; bottom: -.5em; left: 50%; width: 2px; margin-left: -1px; background: var(--${PREFIX}-line); }
+/* The trail: the line is in the theme's accent colour for everything before Up next, and down to Up next's dot.
+   Watched dots and film icons are filled in wherever they are. */
+.${PREFIX}-row.${PREFIX}-passed > .${PREFIX}-mark::before,
+.${PREFIX}-group.${PREFIX}-passed > .${PREFIX}-group-row > .${PREFIX}-mark::before,
+.${PREFIX}-group.${PREFIX}-has-next.${PREFIX}-open > .${PREFIX}-group-row > .${PREFIX}-mark::before { background: var(--${PREFIX}-done); }
+.${PREFIX}-row.${PREFIX}-is-next > .${PREFIX}-mark::before,
+.${PREFIX}-group.${PREFIX}-has-next:not(.${PREFIX}-open) > .${PREFIX}-group-row > .${PREFIX}-mark::before {
+  background: linear-gradient(to bottom, var(--${PREFIX}-done) 50%, var(--${PREFIX}-line) 50%); }
+
+/* The line starts at the first row's dot and ends at the last row's. */
+.${PREFIX}-rows > li:first-child > .${PREFIX}-mark::before,
+.${PREFIX}-rows > li:first-child > .${PREFIX}-group-row > .${PREFIX}-mark::before { top: 50%; }
+.${PREFIX}-rows > li:last-child > .${PREFIX}-mark::before,
+.${PREFIX}-rows > li:last-child:not(.${PREFIX}-open) > .${PREFIX}-group-row > .${PREFIX}-mark::before,
+.${PREFIX}-rows > li.${PREFIX}-open:last-child > .${PREFIX}-episodes > li:last-child > .${PREFIX}-mark::before { bottom: 50%; }
+/* Up next at the very start (all below its dot) or the very end (all above it). */
+.${PREFIX}-rows > li:first-child.${PREFIX}-is-next > .${PREFIX}-mark::before,
+.${PREFIX}-rows > li:first-child.${PREFIX}-has-next:not(.${PREFIX}-open) > .${PREFIX}-group-row > .${PREFIX}-mark::before,
+.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes > li:first-child.${PREFIX}-is-next > .${PREFIX}-mark::before { background: var(--${PREFIX}-line); }
+.${PREFIX}-rows > li:last-child.${PREFIX}-is-next > .${PREFIX}-mark::before,
+.${PREFIX}-rows > li:last-child.${PREFIX}-has-next:not(.${PREFIX}-open) > .${PREFIX}-group-row > .${PREFIX}-mark::before,
+.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes > li:last-child.${PREFIX}-is-next > .${PREFIX}-mark::before { background: var(--${PREFIX}-done); }
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) > .${PREFIX}-episodes > li:last-child.${PREFIX}-is-next > .${PREFIX}-mark::before { background: var(--${PREFIX}-done); }
+
+/* An open season row: the line bends in to its episodes, and back out to the row after. The way out turns within
+   the last episode's row (left of its picture), so it never crosses the next row's poster. Where the dots are is
+   measured after drawing (--x1: the season's dot, --x2: its episodes' dots, --li: where the episode rows start), so
+   themes that move rows about still line up; the defaults are where they sit without a theme. */
+.${PREFIX}-episodes { position: relative; --${PREFIX}-x1: 20px; --${PREFIX}-x2: calc(var(--${PREFIX}-indent) + 20px); --${PREFIX}-li: var(--${PREFIX}-indent);
+  --${PREFIX}-mid: calc((var(--${PREFIX}-x1) + var(--${PREFIX}-x2)) / 2); }
+.${PREFIX}-episodes > li { position: relative; }
+.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes::before,
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) > .${PREFIX}-episodes::after,
+.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes > li:first-child::before,
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) > .${PREFIX}-episodes > li:last-child::after {
+  content: ''; position: absolute; box-sizing: border-box; border: 0 solid var(--${PREFIX}-line); pointer-events: none; }
+.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes::before {
+  left: calc(var(--${PREFIX}-x1) - 1px); top: -6px; width: calc(var(--${PREFIX}-mid) - var(--${PREFIX}-x1) + 2px); height: 18px;
+  border-width: 0 0 2px 2px; border-bottom-left-radius: 10px; }
+.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes > li:first-child::before {
+  left: calc(var(--${PREFIX}-mid) - var(--${PREFIX}-li) - 1px); top: 10px; width: calc(var(--${PREFIX}-x2) - var(--${PREFIX}-mid) + 2px); height: calc(50% - 10px);
+  border-width: 2px 2px 0 0; border-top-right-radius: 10px; }
+.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes > li:first-child > .${PREFIX}-mark::before { top: 50%; }
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) > .${PREFIX}-episodes > li:last-child::after {
+  left: calc(var(--${PREFIX}-mid) - var(--${PREFIX}-li) - 1px); top: 50%; bottom: 10px; width: calc(var(--${PREFIX}-x2) - var(--${PREFIX}-mid) + 2px);
+  border-width: 0 2px 2px 0; border-bottom-right-radius: 10px; }
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) > .${PREFIX}-episodes > li:last-child > .${PREFIX}-mark::before { bottom: 50%; }
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) > .${PREFIX}-episodes::after {
+  left: calc(var(--${PREFIX}-x1) - 1px); top: calc(100% - 12px); width: calc(var(--${PREFIX}-mid) - var(--${PREFIX}-x1) + 2px); height: 30px;
+  border-width: 2px 0 0 2px; border-top-left-radius: 10px; }
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) + li > .${PREFIX}-mark::before,
+.${PREFIX}-group.${PREFIX}-open:not(:last-child) + li > .${PREFIX}-group-row > .${PREFIX}-mark::before { top: 14px; }
+/* The way in is coloured when the trail reaches into the season; the way out when it has passed it. */
+.${PREFIX}-group.${PREFIX}-open:is(.${PREFIX}-passed, .${PREFIX}-has-next) > .${PREFIX}-episodes::before,
+.${PREFIX}-group.${PREFIX}-open:is(.${PREFIX}-passed, .${PREFIX}-has-next) > .${PREFIX}-episodes > li:first-child::before,
+.${PREFIX}-group.${PREFIX}-open.${PREFIX}-passed > .${PREFIX}-episodes > li:last-child::after,
+.${PREFIX}-group.${PREFIX}-open.${PREFIX}-passed > .${PREFIX}-episodes::after { border-color: var(--${PREFIX}-done); }
+.${PREFIX}-mark > * { position: relative; }
+.${PREFIX}-mark > .material-icons { font-size: 1em; padding: .25em; border-radius: 50%; border: 2px solid #c9a35a; color: #e0c27f; }
+:where(.${PREFIX}-mark > .material-icons) { background: var(--jf-palette-background-paper, #2a2620); }
+.${PREFIX}-row.${PREFIX}-is-played > .${PREFIX}-mark > .${PREFIX}-dot { background: var(--${PREFIX}-done); }
+.${PREFIX}-row.${PREFIX}-is-played > .${PREFIX}-mark > .material-icons { border-color: var(--${PREFIX}-done); color: var(--${PREFIX}-done); }
+.${PREFIX}-row.${PREFIX}-is-next > .${PREFIX}-mark > .${PREFIX}-dot { width: .7em; height: .7em; box-sizing: border-box; background: var(--jf-palette-background-default, #101010); border: 2px solid var(--${PREFIX}-done); }
+.${PREFIX}-dot { width: .5em; height: .5em; border-radius: 50%; background: rgba(128,128,128,.65); }
+.${PREFIX}-dot-season { width: .85em; height: .85em; box-sizing: border-box; border: 2px solid rgba(128,128,128,.7); }
+:where(.${PREFIX}-dot-season) { background: var(--jf-palette-background-default, #101010); }
+.${PREFIX}-dot-season.${PREFIX}-dot-part { border-color: var(--jf-palette-primary-main, #00a4dc); }
+.${PREFIX}-dot-season.${PREFIX}-dot-done { border-color: var(--jf-palette-primary-main, #00a4dc); background: var(--jf-palette-primary-main, #00a4dc); }
+.${PREFIX}-poster { width: 3.4em; aspect-ratio: 2 / 3; border-radius: var(--jf-card-borderRadius, 4px); background: rgba(128,128,128,.2) center / cover no-repeat; flex: none; }
+.${PREFIX}-group-row .${PREFIX}-progress { max-width: 14em; margin-top: .4em; height: 4px; }
+:where(.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-group-row) { background: rgba(128,128,128,.09); }
+.${PREFIX}-group.${PREFIX}-is-missing > .${PREFIX}-group-row, .${PREFIX}-group.${PREFIX}-is-skipped > .${PREFIX}-group-row { opacity: .6; }
+.${PREFIX}-episodes { padding-left: var(--${PREFIX}-indent); }
+.${PREFIX}-episodes .${PREFIX}-thumb { width: 7em; }
+.${PREFIX}-tags { display: inline-flex; gap: .3em; flex-wrap: wrap; font-weight: normal; vertical-align: .05em; }
+.${PREFIX}-tags > .${PREFIX}-tag { margin: 0; font-size: .78em; }
+:where(.${PREFIX}-tag-next) { background: var(--jf-palette-primary-main, #00a4dc); border-color: var(--jf-palette-primary-main, #00a4dc); color: #fff; }
+:where(.${PREFIX}-tag-recommended) { color: var(--jf-palette-primary-main, #00a4dc); }
+.${PREFIX}-done-mark { padding: 0 .35em; }
+
+.${PREFIX}-jump { position: fixed; right: 1.5em; bottom: 1.5em; z-index: 1000; display: inline-flex; align-items: center; gap: .45em;
+  padding: .75em 1.2em; min-height: 3em; border-radius: 999px; font: inherit; font-weight: 600; cursor: pointer; box-shadow: 0 .4em 1.2em rgba(0,0,0,.45); }
+:where(.${PREFIX}-jump) { background: #222; color: #fff; border: 1px solid var(--jf-palette-primary-main, #00a4dc); }
+.${PREFIX}-jump:focus-visible { outline: 2px solid var(--jf-palette-primary-main, #00a4dc); outline-offset: 2px; }
+
+/* Order tiles on the Watch Orders page. */
+.${PREFIX}-card-art { position: relative; display: block; margin: -1em -1em .2em; aspect-ratio: 16 / 9; border-radius: var(--jf-card-borderRadius, .3em) var(--jf-card-borderRadius, .3em) 0 0;
+  background: rgba(128,128,128,.2) center / cover no-repeat; }
+.${PREFIX}-card-art > .${PREFIX}-hcard-bar { border-radius: 0; }
+@media (prefers-reduced-motion: reduce) { .${PREFIX}-hero-layer { transition: none; } }
+@media (max-width: 40em) {
+  .${PREFIX}-hero-content { padding: 5em 1em 1em; }
+  .${PREFIX}-nextcard { max-width: none; }
+  .${PREFIX}-search { flex: 1 1 100%; margin-left: 0; }
+  .${PREFIX}-section-toggle > .${PREFIX}-progress { display: none; }
+  .${PREFIX}-view { --${PREFIX}-indent: 14px; }
+  .${PREFIX}-episodes .${PREFIX}-thumb { width: 5em; }
+  .${PREFIX}-row { gap: .6em; }
+  .${PREFIX}-poster { width: 2.8em; }
+  .${PREFIX}-jump { right: 1em; bottom: 1em; }
+  .${PREFIX}-optmode { flex-wrap: wrap; margin-left: 0; }
+}
 @media (max-width: 40em) {
   .${PREFIX}-thumb { width: 5.5em; }
   .${PREFIX}-pos { display: none; }
@@ -978,6 +1168,11 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
                 <div class="${PREFIX}-body" aria-live="polite"></div>`;
             view.addEventListener('click', onViewClick);
             view.addEventListener('change', onViewChange);
+            view.addEventListener('input', (e) => {
+                if (e.target.dataset?.wo === 'search') {
+                    onSearchInput(e.target);
+                }
+            });
             host.appendChild(view);
             viewRoute = null;
         }
@@ -1009,6 +1204,7 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
         view.querySelector(`#${PREFIX}-title`).textContent = title;
         view.querySelector('[data-wo="back"]').hidden = !showBack;
         view.classList.toggle(`${PREFIX}-wide`, !showBack);
+        view.classList.remove(`${PREFIX}-order-view`);
         view.querySelector(`.${PREFIX}-body`).innerHTML = html;
         setTitle(title);
         // Replacing the content can remove the focused element; keep focus on the page.
@@ -1196,6 +1392,7 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
 
     async function showList() {
         currentOrder = null;
+        stopBackdrop();
         setLoading(LABEL, false);
         let list;
         try {
@@ -1215,8 +1412,14 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
             return;
         }
 
+        const tileItems = await loadItems(list.flatMap((o) => [o.Next?.ItemId, o.FirstItemId, o.LastItemId, o.Artwork?.ItemId]).filter(Boolean)).catch(() => new Map());
+        if (!stillOn('')) {
+            return;
+        }
+
         const cards = list.map((o) => {
             const finished = !o.Next;
+            const art = tileImage(o, tileItems);
             const started = o.WatchedCount > 0;
             const run = o.Run || {};
             const status = finished
@@ -1226,6 +1429,8 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
             const runText = run.Number > 1 ? ` · watch-through ${run.Number}` : '';
             return `
                 <article class="paperList ${PREFIX}-card">
+                    <a class="${PREFIX}-card-art" href="${esc(routeHash(o.Id))}" tabindex="-1" aria-hidden="true" ${art ? `style="background-image:url('${esc(art)}')"` : ''}>
+                        <span class="${PREFIX}-hcard-bar"><span style="width:${percent(o.WatchedCount, o.AvailableCount)}%"></span></span></a>
                     <h2>${esc(o.Name)}</h2>
                     ${o.Description ? `<p class="${PREFIX}-desc">${esc(o.Description)}</p>` : ''}
                     ${progressBar(o.WatchedCount, o.AvailableCount, `Progress through ${o.Name}`)}
@@ -1248,6 +1453,19 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
         setView(LABEL, `${autoplay}<div class="${PREFIX}-grid">${cards}</div>`, false);
     }
 
+    /**
+     * An order's tile picture. Part-way through: what's up next. Not started: the order's own image, else its first
+     * item's backdrop. Finished: the order's own image, else its last item's backdrop.
+     */
+    function tileImage(o, items) {
+        const item = (id) => (id ? items.get(normaliseId(id)) : null);
+        const pick = (it) => backdropFor(it, 640)?.url || thumbFor(it) || '';
+        if (o.Next && o.WatchedCount > 0) {
+            return pick(item(o.Next.ItemId));
+        }
+        return artworkFor(o.Id, o.Artwork, items, 640)?.url || pick(item(o.Next ? o.FirstItemId || o.Next.ItemId : o.LastItemId));
+    }
+
     // ----------------------------------------------------------- order view
 
     async function fetchOrder(orderId) {
@@ -1260,6 +1478,8 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
     async function showOrder(orderId) {
         const name = summaries?.find((s) => s.Id === orderId)?.Name || 'Watch order';
         currentOrder = null;
+        searchText = '';
+        stopBackdrop();
         setLoading(name, true);
         let order;
         try {
@@ -1308,62 +1528,552 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
         return '';
     }
 
-    function renderOrder() {
+    // ---------------------------------------------------- order page layout
+    //
+    // The page is a header with the order's artwork, then its sections (headings that fold away), each a list of
+    // rows: a film, a lone episode, or a run of episodes from one season shown as one row that opens to its episodes.
+    // Only open rows' episodes are drawn, so orders with hundreds of episodes stay quick.
+
+    const BACKDROP_SECONDS = 10;
+    const pageState = new Map(); // order id -> { sections: Set, groups: Set, nextKey } (what's open, for this visit)
+    let searchText = '';
+
+    /** The user's "Details banner" display setting (on unless they turned it off), which this header follows. */
+    function bannersOn() {
+        try {
+            return localStorage.getItem(`${userId()}-detailsBanner`) !== 'false';
+        } catch {
+            return true;
+        }
+    }
+
+    const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    /** A backdrop for an item: a film's own, an episode's series'. */
+    function backdropFor(item, maxWidth = 1920) {
+        if (!item) {
+            return null;
+        }
+        const options = { maxWidth, quality: 85, type: 'Backdrop' };
+        if (item.BackdropImageTags?.length) {
+            return { key: normaliseId(item.Id), url: api().getScaledImageUrl(item.Id, { ...options, tag: item.BackdropImageTags[0] }) };
+        }
+        if (item.ParentBackdropItemId && item.ParentBackdropImageTags?.length) {
+            return { key: normaliseId(item.ParentBackdropItemId), url: api().getScaledImageUrl(item.ParentBackdropItemId, { ...options, tag: item.ParentBackdropImageTags[0] }) };
+        }
+        return null;
+    }
+
+    /** The order's own image (an uploaded or downloaded picture, or a library item's backdrop), if it has one. */
+    function artworkFor(orderId, artwork, items, maxWidth = 1920) {
+        if (artwork?.PictureVersion) {
+            return { key: `picture:${orderId}`, url: url(`WatchOrder/Orders/${encodeURIComponent(orderId)}/Image`, { v: artwork.PictureVersion }) };
+        }
+        if (artwork?.ItemId) {
+            const item = items?.get(normaliseId(artwork.ItemId));
+            return backdropFor(item, maxWidth)
+                || { key: normaliseId(artwork.ItemId), url: api().getScaledImageUrl(artwork.ItemId, { maxWidth, quality: 85, type: 'Backdrop' }) };
+        }
+        return null;
+    }
+
+    /**
+     * The header's pictures, in the order they're shown. Not started or finished: the order's own image, then
+     * backdrops from across the whole order. Part-way: what's up next, then backdrops from the section it's in.
+     */
+    function headerImages(progress, items) {
+        const steps = progress.Steps;
+        const next = progress.Next;
+        const started = next && progress.WatchedCount > 0;
+        const list = [];
+        const add = (image) => {
+            if (image && !list.some((i) => i.key === image.key)) {
+                list.push(image);
+            }
+        };
+        let pool = steps;
+        if (started) {
+            add(backdropFor(items.get(normaliseId(next.Step.ItemId))));
+            pool = steps.filter((s) => sectionOf(s) === sectionOf(next));
+        } else {
+            add(artworkFor(progress.OrderId, progress.Artwork, items));
+        }
+        for (const s of pool) {
+            if (list.length >= 24) {
+                break;
+            }
+            if (s.Available && s.Step.ItemId) {
+                add(backdropFor(items.get(normaliseId(s.Step.ItemId))));
+            }
+        }
+        return list;
+    }
+
+    /** The persistent backdrop: two layers that cross-fade, kept between redraws so it doesn't restart. */
+    let backdrop = null; // { element, layers, images, index, timer, orderId }
+    function mountBackdrop(progress, items) {
+        const slot = view?.querySelector(`[data-wo-art]`);
+        if (!slot) {
+            return;
+        }
+        const images = bannersOn() ? headerImages(progress, items) : [];
+        slot.closest(`.${PREFIX}-hero`)?.classList.toggle(`${PREFIX}-hero-plain`, images.length === 0);
+        if (!images.length) {
+            stopBackdrop();
+            return;
+        }
+        if (!backdrop || backdrop.orderId !== progress.OrderId) {
+            stopBackdrop();
+            const element = document.createElement('div');
+            element.className = `${PREFIX}-hero-layers`;
+            element.innerHTML = `<div class="${PREFIX}-hero-layer"></div><div class="${PREFIX}-hero-layer"></div>`;
+            backdrop = { element, layers: [...element.children], images: [], index: -1, front: 0, timer: 0, orderId: progress.OrderId };
+        }
+        slot.replaceWith(backdrop.element);
+        const showing = backdrop.images[backdrop.index]?.key;
+        backdrop.images = images;
+        const keep = images.findIndex((i) => i.key === showing);
+        if (keep === 0 || (keep > 0 && !(progress.Next && progress.WatchedCount > 0))) {
+            backdrop.index = keep; // still right: carry on from it
+        } else {
+            showBackdrop(0, true);
+        }
+        clearInterval(backdrop.timer);
+        if (images.length > 1 && !reducedMotion()) {
+            backdrop.timer = setInterval(() => {
+                if (!backdrop || !backdrop.element.isConnected) {
+                    stopBackdrop();
+                } else if (!document.hidden) {
+                    showBackdrop((backdrop.index + 1) % backdrop.images.length, false);
+                }
+            }, BACKDROP_SECONDS * 1000);
+        }
+    }
+
+    function showBackdrop(index, immediate) {
+        const image = backdrop.images[index];
+        const reveal = () => {
+            if (!backdrop) {
+                return;
+            }
+            const back = backdrop.layers[1 - backdrop.front];
+            back.style.backgroundImage = `url("${image.url.replace(/"/g, '%22')}")`;
+            back.classList.toggle(`${PREFIX}-instant`, immediate);
+            backdrop.layers[backdrop.front].classList.remove(`${PREFIX}-on`);
+            back.classList.add(`${PREFIX}-on`);
+            backdrop.front = 1 - backdrop.front;
+            backdrop.index = index;
+        };
+        if (immediate) {
+            reveal();
+            return;
+        }
+        // Fade only once the picture has loaded, so there's never a blank moment.
+        const img = new Image();
+        img.onload = reveal;
+        img.onerror = () => {
+            if (backdrop) {
+                backdrop.index = index; // skip it
+            }
+        };
+        img.src = image.url;
+    }
+
+    function stopBackdrop() {
+        if (backdrop) {
+            clearInterval(backdrop.timer);
+            backdrop = null;
+        }
+    }
+
+    /** What's open on this order's page: the section and season rows Up next is in, until the user changes it. */
+    function openState(progress, blocks) {
+        const nextPos = progress.Next?.Step.Position ?? null;
+        let state = pageState.get(progress.OrderId);
+        if (!state) {
+            state = { sections: new Set(), groups: new Set(), nextPos: undefined };
+            pageState.set(progress.OrderId, state);
+        }
+        if (state.nextPos !== nextPos) {
+            // First visit, or the user has moved on: open where they are now.
+            state.nextPos = nextPos;
+            const sectionIndex = progress.Next ? sectionOf(progress.Next) : (progress.WatchedCount ? -1 : 0);
+            if (sectionIndex >= 0) {
+                state.sections.add(sectionIndex);
+            }
+            const group = blocks.find((b) => b.kind === 'group' && b.steps.some((s) => s.Step.Position === nextPos));
+            if (group) {
+                state.groups.add(group.key);
+            }
+        }
+        return state;
+    }
+
+    const sectionOf = (s) => s.Step.SectionIndex ?? 0;
+    const isEpisode = (s) => (s.Step.Kind ? s.Step.Kind === 'Episode' : itemFor(s)?.Type === 'Episode');
+
+    /** Splits the steps into rows: films and lone episodes, and runs of episodes from one season. */
+    function buildBlocks(progress) {
+        const steps = progress.Steps;
+        const blocks = [];
+        const seasonKey = (s) => {
+            const item = itemFor(s);
+            const series = item?.SeriesId ? normaliseId(item.SeriesId) : (s.Step.Series || '').toLowerCase();
+            const season = item?.ParentIndexNumber ?? s.Step.Season;
+            return isEpisode(s) && season != null ? `${series}|${season}` : null;
+        };
+        for (let i = 0; i < steps.length; i++) {
+            const s = steps[i];
+            const key = seasonKey(s);
+            const last = blocks[blocks.length - 1];
+            if (key && last && last.seasonKey === key && last.section === sectionOf(s)) {
+                last.indexes.push(i);
+                last.steps.push(s);
+                continue;
+            }
+            blocks.push({ seasonKey: key, section: sectionOf(s), indexes: [i], steps: [s] });
+        }
+        // How many separate runs each season is split into (by films, or by other seasons), to name the parts.
+        const parts = new Map();
+        for (const b of blocks) {
+            if (b.seasonKey && b.steps.length > 1) {
+                parts.set(b.seasonKey, (parts.get(b.seasonKey) || 0) + 1);
+            }
+        }
+        for (const b of blocks) {
+            b.kind = b.seasonKey && b.steps.length > 1 ? 'group' : 'single';
+            b.key = `${b.section}:${b.steps[0].Step.Position}`;
+            b.split = b.kind === 'group' && parts.get(b.seasonKey) > 1;
+        }
+        return blocks;
+    }
+
+    function counts(steps) {
+        const counted = steps.filter((s) => s.Available && !s.Skipped);
+        return {
+            watched: counted.filter((s) => s.Played).length,
+            total: counted.length,
+            skipped: steps.filter((s) => s.Available && s.Skipped).length,
+            optional: steps.filter((s) => s.Step.Optional).length,
+            recommended: steps.filter((s) => s.Step.Optional && s.Step.Recommended).length,
+            missing: steps.filter((s) => !s.Step.ItemId).length
+        };
+    }
+
+    const seasonName = (n) => (n === 0 ? 'Specials' : `Season ${n}`);
+
+    /** Draws one film or episode row. */
+    function stepRow(s, i, isNext, inSeason = false) {
+        const item = itemFor(s);
+        const missing = !s.Step.ItemId;
+        const skipped = !!s.Skipped;
+        const played = !!s.Played;
+        const text = stepText(s, item);
+        const img = imageFor(item);
+        const resume = item?.UserData?.PlayedPercentage && !played ? item.UserData.PlayedPercentage : 0;
+        const detailsLink = item ? `#/details?id=${encodeURIComponent(item.Id)}&serverId=${encodeURIComponent(api().serverId())}` : null;
+        const title = detailsLink ? `<a href="${detailsLink}" data-wo="details">${esc(text.title)}</a>` : esc(text.title);
+        const film = !isEpisode(s);
+        const passed = s.Step.Position < (currentOrder.progress.Next?.Step.Position ?? Infinity);
+        const tags = [
+            isNext ? `<span class="${PREFIX}-tag ${PREFIX}-tag-next">Up next</span>` : '',
+            s.Step.Optional ? `<span class="${PREFIX}-tag${s.Step.Recommended ? ` ${PREFIX}-tag-recommended` : ''}">${['Optional', s.Step.Recommended ? 'recommended' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' · ')}</span>` : ''
+        ].join('');
+        return `
+            <li class="listItem ${PREFIX}-step ${PREFIX}-row${film ? ` ${PREFIX}-is-film` : ` ${PREFIX}-is-episode`}${isNext ? ` ${PREFIX}-is-next` : ''}${missing ? ` ${PREFIX}-is-missing` : ''}${skipped ? ` ${PREFIX}-is-skipped` : ''}${played ? ` ${PREFIX}-is-played` : ''}${passed ? ` ${PREFIX}-passed` : ''}" data-index="${i}"${isNext ? ` id="${PREFIX}-upnext"` : ''}>
+                <span class="${PREFIX}-mark" aria-hidden="true">${film ? '<span class="material-icons movie"></span>' : `<span class="${PREFIX}-dot"></span>`}</span>
+                <div class="${PREFIX}-row-body">
+                <div class="${PREFIX}-thumb" ${img ? `style="background-image:url('${esc(img)}')"` : ''}>
+                    ${resume ? `<div class="itemProgressBar"><div class="itemProgressBarForeground" style="width:${Math.round(resume)}%"></div></div>` : ''}
+                </div>
+                <div class="listItemBody ${PREFIX}-step-main">
+                    <div class="listItemBodyText ${PREFIX}-step-title">${title}${tags ? ` <span class="${PREFIX}-tags">${tags}</span>` : ''}</div>
+                    <div class="listItemBodyText ${PREFIX}-step-sub ${PREFIX}-secondary">${esc(inSeason && item ? `S${pad(item.ParentIndexNumber)}E${pad(item.IndexNumber)}${item.RunTimeTicks ? ` · ${Math.round(item.RunTimeTicks / 600000000)} min` : ''}` : text.sub)}${resume ? ` · ${Math.round(resume)}% watched` : ''}</div>
+                    ${s.Step.Note && currentOrder.progress.Steps[i - 1]?.Step.EntryIndex !== s.Step.EntryIndex ? `<div class="${PREFIX}-note ${PREFIX}-secondary">${esc(s.Step.Note)}</div>` : ''}
+                </div>
+                <div class="${PREFIX}-step-actions">
+                    <button is="paper-icon-button-light" type="button" class="paper-icon-button-light" data-wo="toggle-played" data-index="${i}"
+                        aria-pressed="${played}" aria-label="Watched: ${esc(text.title)}"
+                        title="${played ? 'Watched. Select to mark as not watched' : 'Mark as watched'}" ${missing ? 'disabled' : ''}>
+                        <span class="material-icons check ${played ? 'playstatebutton-icon-played' : 'playstatebutton-icon-unplayed'}" aria-hidden="true"></span>
+                    </button>
+                    <button is="paper-icon-button-light" type="button" class="paper-icon-button-light" data-wo="play-from" data-index="${i}"
+                        aria-label="Play from ${esc(text.title)}" title="Play from here" ${missing ? 'disabled' : ''}>
+                        <span class="material-icons play_arrow" aria-hidden="true"></span>
+                    </button>
+                </div>
+                </div>
+            </li>`;
+    }
+
+    /** Draws a run of one season's episodes as one row, with its episodes underneath when it's open. */
+    function groupRow(block, section, open, nextPos, showSeries) {
+        const first = block.steps[0];
+        const item = block.steps.map(itemFor).find(Boolean);
+        const season = item?.ParentIndexNumber ?? first.Step.Season;
+        const series = item?.SeriesName || first.Step.Series || '';
+        const numbers = block.steps.map((s) => itemFor(s)?.IndexNumber ?? s.Step.Episode).filter((n) => n != null);
+        const range = numbers.length ? `Episodes ${Math.min(...numbers)}–${Math.max(...numbers)}` : `${block.steps.length} episodes`;
+        const where = block.split ? `${seasonName(season)} · ${range}` : seasonName(season);
+        const title = showSeries ? series : where;
+        const c = counts(block.steps);
+        const done = c.total > 0 && c.watched === c.total;
+        const subParts = [showSeries ? where : '', c.total ? `${c.watched} of ${c.total} watched` : c.skipped ? '' : 'Not in your library'];
+        if (c.skipped && !c.total) {
+            subParts.push(`Skipped: ${c.skipped === 1 ? 'optional' : `all ${c.skipped} optional`}`);
+        } else if (c.skipped) {
+            subParts.push(`${c.skipped} optional skipped`);
+        }
+        const allOptional = c.optional === block.steps.length;
+        const tags = [
+            block.steps.some((s) => s.Step.Position === nextPos) && !open ? `<span class="${PREFIX}-tag ${PREFIX}-tag-next">Up next inside</span>` : '',
+            allOptional ? `<span class="${PREFIX}-tag">Optional</span>` : c.optional ? `<span class="${PREFIX}-tag">${c.optional} optional</span>` : '',
+            c.recommended ? `<span class="${PREFIX}-tag ${PREFIX}-tag-recommended">${allOptional && c.recommended === c.optional ? 'Recommended' : `${c.recommended} recommended`}</span>` : ''
+        ].join('');
+        const poster = item?.SeriesId && item.SeriesPrimaryImageTag
+            ? api().getScaledImageUrl(item.SeriesId, { type: 'Primary', maxWidth: 160, quality: 85, tag: item.SeriesPrimaryImageTag })
+            : '';
+        const label = `${showSeries ? `${series}, ` : ''}${where}`;
+        const startAt = block.indexes[block.steps.findIndex((s) => s.Step.ItemId && !s.Played && !s.Skipped)] ?? block.indexes.find((i) => currentOrder.progress.Steps[i].Step.ItemId);
+        const episodes = open
+            ? `<ol class="${PREFIX}-episodes" aria-label="${esc(label)} episodes">${block.steps.map((s, j) => (hideWatched && s.Played && s.Step.Position !== nextPos ? '' : stepRow(s, block.indexes[j], s.Step.Position === nextPos, true))).join('')}</ol>`
+            : '';
+        return `
+            <li class="${PREFIX}-group${open ? ` ${PREFIX}-open` : ''}${done ? ` ${PREFIX}-is-played` : ''}${block.steps.every((s) => s.Step.Position < (nextPos ?? Infinity)) ? ` ${PREFIX}-passed` : ''}${block.steps.some((s) => s.Step.Position === nextPos) ? ` ${PREFIX}-has-next` : ''}${c.total === 0 ? ` ${PREFIX}-is-missing` : ''}${allOptional && c.skipped === c.optional && c.optional ? ` ${PREFIX}-is-skipped` : ''}">
+                <div class="listItem ${PREFIX}-row ${PREFIX}-group-row">
+                    <span class="${PREFIX}-mark" aria-hidden="true"><span class="${PREFIX}-dot ${PREFIX}-dot-season${done ? ` ${PREFIX}-dot-done` : c.watched ? ` ${PREFIX}-dot-part` : ''}"></span></span>
+                    <div class="${PREFIX}-poster" ${poster ? `style="background-image:url('${esc(poster)}')"` : ''}></div>
+                    <div class="listItemBody ${PREFIX}-step-main">
+                        <div class="listItemBodyText ${PREFIX}-step-title">${esc(title)}${tags ? ` <span class="${PREFIX}-tags">${tags}</span>` : ''}</div>
+                        <div class="listItemBodyText ${PREFIX}-step-sub ${PREFIX}-secondary">${esc(subParts.filter(Boolean).join(' · '))}</div>
+                        ${c.total ? progressBar(c.watched, c.total, `${label}: watched`) : ''}
+                        ${[...new Set(block.steps.map((s) => s.Step.Note).filter(Boolean))].map((note) => `<div class="${PREFIX}-note ${PREFIX}-secondary">${esc(note)}</div>`).join('')}
+                    </div>
+                    <div class="${PREFIX}-step-actions">
+                        ${done ? `<span class="material-icons check playstatebutton-icon-played ${PREFIX}-done-mark" role="img" aria-label="All watched"></span>` : ''}
+                        ${startAt != null ? `<button is="paper-icon-button-light" type="button" class="paper-icon-button-light" data-wo="play-from" data-index="${startAt}"
+                            aria-label="Play ${esc(label)}" title="${done ? 'Play from the start of these' : 'Play from the first one not watched'}"><span class="material-icons play_arrow" aria-hidden="true"></span></button>` : ''}
+                        <button is="paper-icon-button-light" type="button" class="paper-icon-button-light" data-wo="group-toggle" data-group="${esc(block.key)}"
+                            aria-expanded="${open}" aria-label="${open ? 'Hide' : 'Show'} the episodes of ${esc(label)}" title="${open ? 'Hide episodes' : `Show ${block.steps.length} episodes`}">
+                            <span class="material-icons ${open ? 'expand_less' : 'expand_more'}" aria-hidden="true"></span></button>
+                    </div>
+                </div>
+                ${episodes}
+            </li>`;
+    }
+
+    /** The order's sections and rows (or, while searching, the matching rows). */
+    function listHtml() {
         const { progress } = currentOrder;
+        const steps = progress.Steps;
+        const blocks = buildBlocks(progress);
+        const state = openState(progress, blocks);
+        const nextPos = progress.Next?.Step.Position ?? null;
+        const sections = progress.Sections?.length ? progress.Sections : [{ Name: null }];
+
+        if (searchText) {
+            const words = searchText.toLowerCase().split(/\s+/).filter(Boolean);
+            const hits = [];
+            steps.forEach((s, i) => {
+                const item = itemFor(s);
+                const hay = [s.Step.DisplayName, s.Step.Label, s.Step.Series, item?.Name, item?.SeriesName, sections[sectionOf(s)]?.Name,
+                    item?.IndexNumber != null ? `s${pad(item.ParentIndexNumber)}e${pad(item.IndexNumber)}` : ''].join(' ').toLowerCase();
+                if (words.every((w) => hay.includes(w))) {
+                    hits.push(stepRow(s, i, s.Step.Position === nextPos));
+                }
+            });
+            const shown = hits.slice(0, 200);
+            return `<p class="${PREFIX}-secondary ${PREFIX}-search-count" role="status">${hits.length ? `${hits.length} match${hits.length === 1 ? '' : 'es'}${hits.length > shown.length ? `, showing the first ${shown.length}` : ''}` : 'Nothing in this order matches.'}</p>
+                <ol class="${PREFIX}-rows" aria-label="Search results">${shown.join('')}</ol>`;
+        }
+
+        const html = sections.map((section, index) => {
+            const own = blocks.filter((b) => b.section === index);
+            if (!own.length) {
+                return '';
+            }
+            const sectionSteps = own.flatMap((b) => b.steps);
+            const c = counts(sectionSteps);
+            const done = c.total > 0 && c.watched === c.total;
+            const named = !!section.Name;
+            const open = !named || state.sections.has(index);
+            // Name the series on season rows unless the section is named after that series.
+            const rows = open ? own.map((b) => {
+                if (b.kind === 'group') {
+                    const series = (b.steps.map(itemFor).find(Boolean)?.SeriesName || b.steps[0].Step.Series || '').toLowerCase();
+                    const showSeries = !(named && series && section.Name.toLowerCase() === series);
+                    const visible = !(hideWatched && b.steps.every((s) => s.Played || !s.Available) && !b.steps.some((s) => s.Step.Position === nextPos));
+                    return visible ? groupRow(b, index, state.groups.has(b.key), nextPos, showSeries) : '';
+                }
+                const s = b.steps[0];
+                return hideWatched && s.Played && s.Step.Position !== nextPos ? '' : stepRow(s, b.indexes[0], s.Step.Position === nextPos);
+            }).join('') : '';
+            const here = progress.Next && sectionOf(progress.Next) === index;
+            const body = open ? `<ol class="${PREFIX}-rows" aria-label="${esc(section.Name || 'Viewing order')}">${rows}</ol>` : '';
+            if (!named) {
+                return `<section class="${PREFIX}-section ${PREFIX}-section-plain" data-section="${index}">${body}</section>`;
+            }
+            const summary = [c.total ? (done ? 'Watched' : `${c.watched} of ${c.total} watched`) : c.skipped ? '' : 'Not in your library', c.skipped ? `${c.skipped} optional skipped` : '', here ? 'You\'re here' : '']
+                .filter(Boolean).join(' · ');
+            return `
+                <section class="${PREFIX}-section${open ? ` ${PREFIX}-open` : ''}${done ? ` ${PREFIX}-is-played` : ''}" id="${PREFIX}-section-${index}" data-section="${index}">
+                    <h2 class="${PREFIX}-section-head">
+                        <button type="button" class="${PREFIX}-section-toggle" data-wo="section-toggle" data-section="${index}" aria-expanded="${open}">
+                            <span class="material-icons ${open ? 'expand_more' : 'chevron_right'}" aria-hidden="true"></span>
+                            <span class="${PREFIX}-section-name">${esc(section.Name)}</span>
+                            <span class="${PREFIX}-section-summary ${PREFIX}-secondary">${esc(summary)}</span>
+                            ${c.total ? progressBar(c.watched, c.total, `${section.Name}: watched`) : ''}
+                            ${done ? `<span class="material-icons check playstatebutton-icon-played" role="img" aria-label="All watched"></span>` : ''}
+                        </button>
+                    </h2>
+                    ${body}
+                </section>`;
+        }).join('');
+        return html;
+    }
+
+    function renderList() {
+        const list = view?.querySelector(`.${PREFIX}-list`);
+        if (!list || !currentOrder) {
+            return;
+        }
+        list.innerHTML = listHtml();
+        alignBends();
+        watchUpNext();
+    }
+
+    /**
+     * Tells each open season row's bends where its dots really are: themes can change the rows' padding, which
+     * would leave fixed positions a few pixels out.
+     */
+    function alignBends() {
+        for (const ol of view?.querySelectorAll(`.${PREFIX}-group.${PREFIX}-open > .${PREFIX}-episodes`) || []) {
+            const from = ol.parentElement.querySelector(`:scope > .${PREFIX}-group-row > .${PREFIX}-mark`);
+            const first = ol.querySelector(`:scope > li > .${PREFIX}-mark`);
+            if (!from || !first) {
+                continue;
+            }
+            const base = ol.getBoundingClientRect().left;
+            const centre = (el) => { const r = el.getBoundingClientRect(); return r.left + r.width / 2 - base; };
+            ol.style.setProperty(`--${PREFIX}-x1`, `${centre(from).toFixed(1)}px`);
+            ol.style.setProperty(`--${PREFIX}-x2`, `${centre(first).toFixed(1)}px`);
+            ol.style.setProperty(`--${PREFIX}-li`, `${(first.closest('li').getBoundingClientRect().left - base).toFixed(1)}px`);
+        }
+    }
+
+    let alignTimer = 0;
+    window.addEventListener('resize', () => {
+        clearTimeout(alignTimer);
+        alignTimer = setTimeout(alignBends, 150);
+    });
+
+    /** Shows "Jump to Up next" while neither Up next's row nor the header's Up next card is on screen. */
+    let upNextObserver = null;
+    function watchUpNext() {
+        upNextObserver?.disconnect();
+        const jump = view?.querySelector('[data-wo="jump-next"]');
+        if (!jump) {
+            return;
+        }
+        if (!currentOrder?.progress.Next || searchText) {
+            jump.hidden = true;
+            return;
+        }
+        const targets = [view.querySelector(`#${PREFIX}-upnext`), view.querySelector(`.${PREFIX}-nextcard`)].filter(Boolean);
+        if (!('IntersectionObserver' in window)) {
+            jump.hidden = false;
+            return;
+        }
+        const seen = new Map();
+        upNextObserver = new IntersectionObserver((entries) => {
+            for (const entry of entries) {
+                seen.set(entry.target, entry.isIntersecting);
+            }
+            jump.hidden = [...seen.values()].some(Boolean);
+        });
+        targets.forEach((t) => upNextObserver.observe(t));
+    }
+
+    /** Opens the section and season row Up next is in, scrolls to it and puts focus on its play button. */
+    function jumpToNext() {
+        const { progress } = currentOrder;
+        const next = progress.Next;
+        if (!next) {
+            return;
+        }
+        if (searchText) {
+            searchText = '';
+            const input = view.querySelector('[data-wo="search"]');
+            if (input) {
+                input.value = '';
+            }
+        }
+        const state = pageState.get(progress.OrderId);
+        state.sections.add(sectionOf(next));
+        const group = buildBlocks(progress).find((b) => b.kind === 'group' && b.steps.some((s) => s.Step.Position === next.Step.Position));
+        if (group) {
+            state.groups.add(group.key);
+        }
+        renderList();
+        const row = view.querySelector(`#${PREFIX}-upnext`);
+        row?.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+        row?.querySelector('[data-wo="play-from"]')?.focus({ preventScroll: true });
+    }
+
+    function toggleSection(index) {
+        const state = pageState.get(currentOrder.progress.OrderId);
+        if (state.sections.has(index)) {
+            state.sections.delete(index);
+        } else {
+            state.sections.add(index);
+        }
+        renderList();
+        view.querySelector(`[data-wo="section-toggle"][data-section="${index}"]`)?.focus();
+    }
+
+    function toggleGroup(key) {
+        const state = pageState.get(currentOrder.progress.OrderId);
+        if (state.groups.has(key)) {
+            state.groups.delete(key);
+        } else {
+            state.groups.add(key);
+        }
+        renderList();
+        view.querySelector(`[data-wo="group-toggle"][data-group="${CSS.escape(key)}"]`)?.focus();
+    }
+
+    function goToSection(index) {
+        const state = pageState.get(currentOrder.progress.OrderId);
+        state.sections.add(index);
+        if (searchText) {
+            searchText = '';
+            view.querySelector('[data-wo="search"]').value = '';
+        }
+        renderList();
+        const section = view.querySelector(`#${PREFIX}-section-${index}`);
+        section?.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
+        section?.querySelector('[data-wo="section-toggle"]')?.focus({ preventScroll: true });
+    }
+
+    let searchTimer = 0;
+    function onSearchInput(input) {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            searchText = input.value.trim();
+            renderList();
+        }, 150);
+    }
+
+    function renderOrder() {
+        const { progress, items } = currentOrder;
         const steps = progress.Steps;
         const nextIndex = steps.findIndex((s) => s === progress.Next || (progress.Next && s.Step.Position === progress.Next.Step.Position));
         const watched = progress.WatchedCount;
         const available = progress.AvailableCount;
-        let previousEntry = -1;
-
-        const rows = steps.map((s, i) => {
-            const item = itemFor(s);
-            const missing = !s.Step.ItemId;
-            const skipped = !!s.Skipped;
-            const played = !!s.Played;
-            const isNext = i === nextIndex;
-            const showNote = s.Step.Note && s.Step.EntryIndex !== previousEntry;
-            previousEntry = s.Step.EntryIndex;
-            if (hideWatched && played && !isNext) {
-                return '';
-            }
-
-            const text = stepText(s, item);
-            const img = imageFor(item);
-            const resume = item?.UserData?.PlayedPercentage && !played ? item.UserData.PlayedPercentage : 0;
-            const detailsLink = item ? `#/details?id=${encodeURIComponent(item.Id)}&serverId=${encodeURIComponent(api().serverId())}` : null;
-            const title = detailsLink
-                ? `<a href="${detailsLink}" data-wo="details">${esc(text.title)}</a>`
-                : esc(text.title);
-
-            return `
-                <li class="listItem listItem-border ${PREFIX}-step${isNext ? ` ${PREFIX}-is-next` : ''}${missing ? ` ${PREFIX}-is-missing` : ''}${skipped ? ` ${PREFIX}-is-skipped` : ''}" data-index="${i}">
-                    <span class="${PREFIX}-pos ${PREFIX}-secondary" aria-hidden="true">${s.Step.Position}</span>
-                    <div class="${PREFIX}-thumb" ${img ? `style="background-image:url('${esc(img)}')"` : ''}>
-                        ${resume ? `<div class="itemProgressBar"><div class="itemProgressBarForeground" style="width:${Math.round(resume)}%"></div></div>` : ''}
-                    </div>
-                    <div class="listItemBody ${PREFIX}-step-main">
-                        <div class="listItemBodyText ${PREFIX}-step-title">${title}</div>
-                        <div class="listItemBodyText ${PREFIX}-step-sub ${PREFIX}-secondary">${s.Step.Optional ? `<span class="${PREFIX}-tag${s.Step.Recommended ? ` ${PREFIX}-tag-recommended` : ''}">${['Optional', s.Step.Recommended ? 'recommended' : '', skipped ? 'skipped' : ''].filter(Boolean).join(' · ')}</span> ` : ''}${esc(text.sub)}${isNext ? ' · <strong>Up next</strong>' : ''}${resume ? ` · ${Math.round(resume)}% watched` : ''}</div>
-                        ${showNote ? `<div class="${PREFIX}-note ${PREFIX}-secondary">${esc(s.Step.Note)}</div>` : ''}
-                    </div>
-                    <div class="${PREFIX}-step-actions">
-                        <button is="paper-icon-button-light" type="button" class="paper-icon-button-light" data-wo="toggle-played" data-index="${i}"
-                            aria-pressed="${played}" aria-label="Watched: ${esc(text.title)}"
-                            title="${played ? 'Watched. Select to mark as not watched' : 'Mark as watched'}" ${missing ? 'disabled' : ''}>
-                            <span class="material-icons check ${played ? 'playstatebutton-icon-played' : 'playstatebutton-icon-unplayed'}" aria-hidden="true"></span>
-                        </button>
-                        <button is="paper-icon-button-light" type="button" class="paper-icon-button-light" data-wo="play-from" data-index="${i}"
-                            aria-label="Play from ${esc(text.title)}" title="Play from here" ${missing ? 'disabled' : ''}>
-                            <span class="material-icons play_arrow" aria-hidden="true"></span>
-                        </button>
-                    </div>
-                </li>`;
-        }).join('');
-
         const nextStep = nextIndex >= 0 ? steps[nextIndex] : null;
         const missingCount = steps.filter((st) => !st.Step.ItemId && !st.Skipped).length;
-        const nextText = nextStep ? stepText(nextStep, itemFor(nextStep)) : null;
+        const nextItem = nextStep ? itemFor(nextStep) : null;
+        const nextText = nextStep ? stepText(nextStep, nextItem) : null;
         const run = progress.Run || {};
         // Watched some of it before choosing how to count it (e.g. seen the films years ago): ask.
         const needsChoice = !run.Chosen && watched > 0;
@@ -1384,32 +2094,77 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
                         <button is="emby-button" type="button" class="emby-button raised" data-wo="run-fresh"><span class="material-icons replay" aria-hidden="true"></span><span>Start fresh</span></button>
                     </div>
                 </div>` : '';
-        const startOver = !needsChoice && watched > 0
-            ? `<button is="emby-button" type="button" class="emby-button raised${nextStep ? '' : ' button-submit'}" data-wo="run-fresh">
-                   <span class="material-icons replay" aria-hidden="true"></span><span>${nextStep ? 'Start over' : 'Watch again'}</span></button>`
+        const startOver = !needsChoice && watched > 0 && nextStep
+            ? `<button is="emby-button" type="button" class="emby-button raised" data-wo="run-fresh"><span class="material-icons replay" aria-hidden="true"></span><span>Start over</span></button>`
             : '';
+        const resume = nextItem?.UserData?.PlayedPercentage || 0;
+        const nextThumb = thumbFor(nextItem);
+        const card = nextStep ? `
+                <div class="${PREFIX}-nextcard">
+                    <div class="${PREFIX}-nextcard-img" ${nextThumb ? `style="background-image:url('${esc(nextThumb)}')"` : ''}>
+                        ${resume ? `<div class="itemProgressBar"><div class="itemProgressBarForeground" style="width:${Math.round(resume)}%"></div></div>` : ''}
+                    </div>
+                    <div class="${PREFIX}-nextcard-body">
+                        <div class="${PREFIX}-nextcard-label">${watched ? 'Up next' : 'Starts with'}</div>
+                        <div class="${PREFIX}-nextcard-title">${esc(nextText.title)}</div>
+                        <div class="${PREFIX}-secondary ${PREFIX}-nextcard-sub">${esc(nextText.sub)}${resume ? ` · ${Math.round(resume)}% watched` : ''}</div>
+                        <button is="emby-button" type="button" class="emby-button raised button-submit" data-wo="play-from" data-index="${nextIndex}">
+                            <span class="material-icons play_arrow" aria-hidden="true"></span><span>${resume ? 'Resume' : watched ? 'Continue' : 'Start'}</span></button>
+                    </div>
+                </div>`
+            : `
+                <div class="${PREFIX}-nextcard ${PREFIX}-nextcard-done">
+                    <div class="${PREFIX}-nextcard-body">
+                        <span class="${PREFIX}-done"><span class="material-icons check playstatebutton-icon-played" aria-hidden="true"></span>You've finished this order.</span>
+                        ${watched > 0 ? `<button is="emby-button" type="button" class="emby-button raised button-submit" data-wo="run-fresh"><span class="material-icons replay" aria-hidden="true"></span><span>Watch again</span></button>` : ''}
+                    </div>
+                </div>`;
+        const named = (progress.Sections || []).map((s, i) => ({ ...s, index: i })).filter((s) => s.Name);
+        const here = progress.Next ? sectionOf(progress.Next) : null;
+        const tabs = named.length > 1 ? `<div class="${PREFIX}-tabs-list">${named.map((s) => {
+            const sectionSteps = steps.filter((st) => sectionOf(st) === s.index);
+            const c = counts(sectionSteps);
+            const status = s.index === here ? 'You\'re here' : c.total && c.watched === c.total ? 'Done' : '';
+            return `<button type="button" class="${PREFIX}-tab${s.index === here ? ` ${PREFIX}-tab-here` : ''}" data-wo="tab" data-section="${s.index}"${s.index === here ? ' aria-current="step"' : ''}>${esc(s.Name)}${status ? `<span class="${PREFIX}-tab-status">${status}</span>` : ''}</button>`;
+        }).join('')}</div>` : '';
+
         const head = `
-            <div class="${PREFIX}-head">
-                ${progress.OrderDescription ? `<p class="${PREFIX}-desc" style="-webkit-line-clamp:unset;display:block">${esc(progress.OrderDescription)}</p>` : ''}
-                ${progressBar(watched, available, 'Progress')}
-                <div class="${PREFIX}-count">${watched} of ${available} watched${progress.SkippedCount ? ` · ${progress.SkippedCount} optional skipped` : ''}${missingCount ? ` · ${missingCount} not in your library` : ''}</div>
-                ${runLine}
-                ${choice}
-                <div class="${PREFIX}-toolbar">
-                    ${nextStep
-                        ? `<button is="emby-button" type="button" class="emby-button raised button-submit" data-wo="play-from" data-index="${nextIndex}">
-                               <span class="material-icons play_arrow" aria-hidden="true"></span><span>${watched ? 'Continue' : 'Start'}: ${esc(nextText.title)}</span></button>`
-                        : `<span class="${PREFIX}-done"><span class="material-icons check playstatebutton-icon-played" aria-hidden="true"></span>You've finished this order.</span>`}
-                    ${startOver}
-                    ${nextStep && showHomeRow ? `<button is="emby-button" type="button" class="emby-button raised" data-wo="toggle-home" aria-pressed="${progress.OnHomeScreen}">
-                        <span class="material-icons ${progress.OnHomeScreen ? 'check' : 'add'}" aria-hidden="true"></span><span>${progress.OnHomeScreen ? 'On your home screen' : 'Add to home screen'}</span></button>` : ''}
-                    <label class="checkboxContainer"><input type="checkbox" is="emby-checkbox" data-wo="hide-watched" ${hideWatched ? 'checked' : ''}><span>Hide watched</span></label>
-                    ${optionalChoice(progress)}
-                    ${playlistToggle(progress, !!nextStep)}
+            <div class="${PREFIX}-hero">
+                <div data-wo-art></div>
+                <div class="${PREFIX}-hero-scrim"></div>
+                <div class="${PREFIX}-hero-content">
+                    <div class="${PREFIX}-hero-main">
+                        <div class="${PREFIX}-hero-title" aria-hidden="true">${esc(progress.OrderName)}</div>
+                        ${progress.OrderDescription ? `<p class="${PREFIX}-desc">${esc(progress.OrderDescription)}</p>` : ''}
+                        ${progressBar(watched, available, 'Progress')}
+                        <div class="${PREFIX}-count">${watched} of ${available} watched${progress.SkippedCount ? ` · ${progress.SkippedCount} optional skipped` : ''}${missingCount ? ` · ${missingCount} not in your library` : ''}</div>
+                        ${runLine}
+                        ${choice}
+                        <div class="${PREFIX}-toolbar">
+                            ${startOver}
+                            ${nextStep && showHomeRow ? `<button is="emby-button" type="button" class="emby-button raised" data-wo="toggle-home" aria-pressed="${progress.OnHomeScreen}">
+                                <span class="material-icons ${progress.OnHomeScreen ? 'check' : 'add'}" aria-hidden="true"></span><span>${progress.OnHomeScreen ? 'On your home screen' : 'Add to home screen'}</span></button>` : ''}
+                        </div>
+                        <div class="${PREFIX}-toolbar ${PREFIX}-options">
+                            <label class="checkboxContainer"><input type="checkbox" is="emby-checkbox" data-wo="hide-watched" ${hideWatched ? 'checked' : ''}><span>Hide watched</span></label>
+                            ${optionalChoice(progress)}
+                            ${playlistToggle(progress, !!nextStep)}
+                        </div>
+                    </div>
+                    ${card}
                 </div>
+            </div>
+            <div class="${PREFIX}-tabs" role="navigation" aria-label="Sections and search">
+                ${tabs}
+                <label class="${PREFIX}-search"><span class="material-icons search" aria-hidden="true"></span><span class="${PREFIX}-sr">Search this order</span>
+                    <input type="search" data-wo="search" placeholder="Search this order" value="${esc(searchText)}" autocomplete="off"></label>
             </div>`;
 
-        setView(progress.OrderName, `${head}<ol class="${PREFIX}-steps" aria-label="Viewing order">${rows}</ol>`, true);
+        setView(progress.OrderName, `${head}<div class="${PREFIX}-list"></div>
+            <button type="button" class="${PREFIX}-jump" data-wo="jump-next" hidden><span class="material-icons arrow_downward" aria-hidden="true"></span><span>Jump to Up next</span></button>`, true);
+        view.classList.add(`${PREFIX}-order-view`);
+        mountBackdrop(progress, items);
+        renderList();
     }
 
     /**
@@ -1634,6 +2389,10 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
             case 'run-continue': startRun(currentOrder?.progress.OrderId, 'Continue', target); break;
             case 'run-fresh': startRun(currentOrder?.progress.OrderId, 'Fresh', target); break;
             case 'watch-again': startRun(target.dataset.order, 'Fresh', target); break;
+            case 'section-toggle': toggleSection(Number(target.dataset.section)); break;
+            case 'group-toggle': toggleGroup(target.dataset.group); break;
+            case 'tab': goToSection(Number(target.dataset.section)); break;
+            case 'jump-next': jumpToNext(); break;
             default:
                 if (action.startsWith('retry-order:')) {
                     showOrder(action.slice('retry-order:'.length));
@@ -1754,8 +2513,7 @@ html.${PREFIX}-route #fallbackPage > :not(.${PREFIX}-view) { display: none !impo
         }
         if (e.target.dataset.wo === 'hide-watched') {
             hideWatched = e.target.checked;
-            renderOrder();
-            view.querySelector('[data-wo="hide-watched"]')?.focus();
+            renderList();
         }
     }
 

@@ -6,11 +6,11 @@ Watch films and episodes from across a franchise in one defined order: Star Wars
 
 ## Screenshots
 
-![The Watch Orders page, with progress, Continue and home screen buttons on each order](images/screenshots/watch-orders-page.png)
-*The Watch Orders page in the web app.*
+![The Watch Orders page: a card per order with artwork, progress, what's next, and Start or Continue](images/screenshots/watch-orders-page.png)
+*The Watch Orders page in the web app. Each order's card shows its own image until it's started, then what's up next.*
 
-![An order's page: progress, Continue, Start over, the home screen and playlist options, and each entry with its watched state](images/screenshots/order-page.png)
-*An order's page, part-way through a watch-through.*
+![An order's page: a backdrop header with progress and the Up next card, section buttons and search, and the order as a timeline with a season row opened to its episodes](images/screenshots/order-page.png)
+*An order's page: sections that fold away, seasons as single rows that open to their episodes, and a timeline that fills in as you watch.*
 
 ![The Up Next in Your Watch Orders row on the home screen](images/screenshots/home-row.png)
 *"Up Next in Your Watch Orders" on the home screen.*
@@ -18,8 +18,8 @@ Watch films and episodes from across a franchise in one defined order: Star Wars
 ![The Part of these watch orders section on a film's page, with Continue where you left off and Play from the start](images/screenshots/item-page.png)
 *On a film's page: the orders it's in, where, and what comes next.*
 
-![The order builder in the Dashboard, searching the library](images/screenshots/order-builder.png)
-*Building an order in the Dashboard.*
+![The order builder in the Dashboard: the order's details, its image, its sections, and the list of entries](images/screenshots/order-builder.png)
+*Building an order in the Dashboard, with its image and sections.*
 
 ![Ready-made orders in the Dashboard, with how much of each is in the library](images/screenshots/ready-made-orders.png)
 *Ready-made orders, ready to add.*
@@ -28,9 +28,11 @@ These screenshots are from a server using the [ElegantFin](https://github.com/ls
 
 ## Features
 
-- **Watch orders page for everyone** in the web app: a **Watch Orders** entry in the library bar (or an icon next to the user menu, or both; set in the plugin settings) opens a Watch Orders page inside the app, like a library (with its own address, `#/watchorders`, so Back and refresh work). It shows each order with progress, "Continue" and "Play from here" (which queues the rest of the order), and watched toggles. Needs the [File Transformation](https://github.com/IAmParadox27/jellyfin-plugin-file-transformation) plugin.
+- **Watch orders page for everyone** in the web app: a **Watch Orders** entry in the library bar (or an icon next to the user menu, or both; set in the plugin settings) opens a Watch Orders page inside the app, like a library (with its own address, `#/watchorders`, so Back and refresh work). It shows each order with its artwork, progress, "Continue" and "Play from here" (which queues the rest of the order), and watched toggles. Needs the [File Transformation](https://github.com/IAmParadox27/jellyfin-plugin-file-transformation) plugin.
 - **"Up Next in Your Watch Orders" on the home screen**, just after Continue Watching: the next item in each order you're following, on Jellyfin's own cards (same as Next Up, with the watched, favourite and ⋯ buttons), plus the order's progress. Play starts it and queues the rest of the order. It's opt-in: an order appears once you add it, play from it on the Watch Orders page, or choose how to count what you'd already watched. Having watched some of it elsewhere isn't enough. Each user can add or remove orders themselves.
-- **Visual order builder** in the Dashboard. Add films and episodes from your library, search TMDb/TVDb for titles you don't have yet, start from an existing collection, then drag to reorder. Each entry shows live whether it's in your library.
+- **Built for long orders.** An order's page opens with a backdrop header and an Up next card, then the order as a timeline that fills in as you watch. Sections ("Phase One", "Naruto Shippuden") fold away and the page opens at the one you're up to; a run of episodes from one season is a single row that opens to its episodes; films sit between seasons where they belong. **Jump to Up next** and search find your place in an order of hundreds of episodes. Orders that are a few long runs of different series get sections on their own.
+- **Order artwork.** Each order can choose its image: the backdrop of a film or show in your library, a picture from the web (the server keeps its own copy, so the link can't go dead), or one uploaded in the Dashboard. Without one, the first item's backdrop is used; once someone starts an order, their tile shows what's up next.
+- **Visual order builder** in the Dashboard. Add films and episodes from your library, search TMDb/TVDb for titles you don't have yet, start from an existing collection, then drag to reorder. Add section headings and choose the order's image. Each entry shows live whether it's in your library.
 - **Mixed orders.** Films, single episodes, episode ranges and whole seasons from any number of series, in one list.
 - **Library matching.** Matches by TMDb/IMDb/TVDb ids first, then by title and year, and shows exactly which items are missing.
 - **Per-user progress.** Based on Jellyfin's own played flags: watch something anywhere and you move along the order. Respects each user's library access.
@@ -40,7 +42,7 @@ These screenshots are from a server using the [ElegantFin](https://github.com/ls
 - **Playlists of what's left, for any app.** Each user gets a playlist ("Watch Order: …") of what they have left in each order they're following, in order and without the optional entries they skip. Watched items drop off as they finish, so pressing Play on it in any Jellyfin app (Android TV, iOS, Kodi and so on) carries on the order. It goes when they finish and comes back for a new watch-through. On by default for orders a user has taken up; each user can turn it off or on per order (deleting the playlist turns it off), and the admin can make it opt-in or off for everyone.
 - **"Part of a watch order" on item pages.** A film's or episode's page in the web app shows which orders it's in, its place in each ("No. 12 of 160"), what the order plays after it, and your own progress, with **Continue where you left off** (your next item in the order, then the rest of it) or, if you haven't started or have finished, **Play from the start**, and **View order**. A series' or season's page shows how many entries from it each order has, with the same buttons.
 - **Viewer stats for admins.** Each order in the Dashboard shows how many people are watching it, have finished or have yet to start, and **Viewers** opens a table of each user's progress, watch-through, next item and when they last watched something in it, flagging anyone stalled for a month.
-- **Ready-made orders.** The MCU (complete, both sagas and each phase), Star Wars (the Skywalker Saga and the complete timeline) and anime (Cardcaptor Sakura, Naruto, Naruto and Boruto, Urusei Yatsura) come with the plugin. Add the ones you want from the Dashboard, which shows how much of each is already in your library. Nothing is added on its own, and when a plugin update improves an order you've added, you're offered the new version (with a warning if you've edited yours).
+- **Ready-made orders.** The MCU (complete in release order or story order, both sagas and each phase), Star Wars (the Skywalker Saga and the complete timeline) and anime (Cardcaptor Sakura, Naruto, Naruto and Boruto, Urusei Yatsura) come with the plugin. Add the ones you want from the Dashboard, which shows how much of each is already in your library. Nothing is added on its own, and when a plugin update improves an order you've added, you're offered the new version (with a warning if you've edited yours).
 - **Shareable files.** Orders are plain JSON with a schema, easy to keep in git and swap with others. Import them from files, a link (GitHub file pages and Gists work), or by pasting. Each order has its own version number, and fields from newer plugin versions are kept rather than dropped (see [Compatibility](docs/order-format.md#compatibility)).
 - **Stays current.** Re-matches automatically after library changes (debounced) and on a daily scheduled task.
 
@@ -165,14 +167,14 @@ The Release workflow checks the version matches, runs the tests, builds the plug
 
 Next up:
 
-- [ ] **Structure and artwork for long orders**
-  - **Sections:** optional headings such as "Phase One" or "Season 2", shown as dividers that can be collapsed, with the page opening at the section you're up to.
-  - **Seasons as one row:** a whole-season entry shows as a single row ("Season 2 · 12 of 26 watched") that expands to its episodes.
-  - **Artwork:** a backdrop on each order's page and artwork on its tile, built from the order's own films and shows, or an image the order chooses.
-  - **Jump to Up next**, and search within an order.
+- [ ] **Updates for orders imported from a link.** Check the link an order came from for a newer version, and offer the update in the Dashboard, as ready-made orders already do (with a warning if you've edited your copy).
+- [ ] **Mark a range as watched.** "Mark everything up to here as watched" on an entry, and for a whole season row or section, for anyone starting an order part-way through.
+- [ ] **Ready-made Arrowverse order**, with the crossover episodes placed across the shows.
+- [ ] **Who can see which orders.** A per-order choice of everyone or chosen users, to keep an order from children's accounts or keep a work-in-progress order to yourself.
 
 Later, maybe:
 
+- [ ] **"New in your order" notices** when something from an order you're following arrives in the library.
 - [ ] Extra order sources (community indexes an admin can add, like plugin repositories). Not planned for now; anyone can share orders by link.
 
 Done:
@@ -188,6 +190,7 @@ Done:
 - [x] **Item pages** show the orders an item is in, with Continue where you left off or Play from the start.
 - [x] **Viewer stats** for admins.
 - [x] **Import from a link**, and **ready-made orders** bundled with the plugin.
+- [x] **Structure and artwork for long orders**: sections, seasons as one row, a backdrop header and tile artwork, Jump to Up next, and search within an order.
 - [x] **Resolver tests** against an in-memory library that follows Jellyfin's lookup rules.
 
 ## Contributing

@@ -14,6 +14,18 @@
     "author": { "type": "string" },
     "version": { "type": "integer", "minimum": 1, "description": "This order's own version: 1 to start with, raised each time you publish a change, so people with a copy can tell when a newer one is available." },
     "source": { "type": "string", "pattern": "^https?://", "description": "Where the latest copy of this file is published." },
+    "image": {
+      "type": "object",
+      "description": "The image on the order's tile and page header: a film or show from the library (type with providerIds or title), and/or a picture on the web (url).",
+      "properties": {
+        "type": { "enum": ["movie", "series"] },
+        "title": { "type": "string" },
+        "year": { "type": "integer", "minimum": 1880 },
+        "providerIds": { "$ref": "#/$defs/providerIds" },
+        "url": { "type": "string", "pattern": "^https?://", "description": "A JPEG, PNG or WebP picture up to 10 MB. The server keeps its own copy." }
+      },
+      "additionalProperties": false
+    },
     "entries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/entry" } }
   },
   "additionalProperties": false,
@@ -34,7 +46,8 @@
         "providerIds": { "$ref": "#/$defs/providerIds" },
         "note": { "type": "string" },
         "optional": { "type": "boolean", "description": "Filler or a side story. Each user chooses per order whether to skip optional entries." },
-        "recommended": { "type": "boolean", "description": "For an optional entry: worth watching anyway. Viewers can skip optional entries but keep the recommended ones. Needs optional: true." }
+        "recommended": { "type": "boolean", "description": "For an optional entry: worth watching anyway. Viewers can skip optional entries but keep the recommended ones. Needs optional: true." },
+        "section": { "type": "string", "minLength": 1, "description": "Starts a new section at this entry, with this heading (e.g. \"Phase Two\")." }
       }
     },
     "entry": {

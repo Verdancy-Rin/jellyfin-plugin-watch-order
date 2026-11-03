@@ -35,6 +35,35 @@ Each user chooses per order what to do with optional entries: watch them all, sk
 
 Season `0` is Specials.
 
+## Sections
+
+Long orders can be split into sections, such as "Phase One" or "Season 2", which show as headings people can fold away. Give the entry that starts a section a `section` with its heading:
+
+```json
+{ "type": "movie", "title": "Iron Man 3", "year": 2013, "section": "Phase Two" }
+```
+
+Everything from that entry until the next `section` is in that section. Entries before the first `section` go in a first section with no heading.
+
+An order without any `section` is split automatically when it's made of a few long runs of different series (Naruto, then Naruto Shippuden): each run becomes a section named after the series, and films join the run they sit in. Orders that hop between series and films, like the MCU, aren't split unless they say where.
+
+## Image
+
+An order can choose the image shown on its tile and at the top of its page:
+
+```jsonc
+"image": {
+  "type": "movie",                       // "movie" or "series": use that item's backdrop from the library
+  "title": "The Avengers", "year": 2012,
+  "providerIds": { "Tmdb": "24428" },
+  "url": "https://example.com/banner.jpg" // or (and) a picture on the web
+}
+```
+
+`type` with `providerIds` or `title` points at a film or show in the library; it's matched the same way entries are. `url` is a JPEG, PNG or WebP picture of up to 10 MB. The server downloads it once and keeps its own copy, so a link that stops working later doesn't matter. When both are given, the library item is used if it's in the library, and the picture otherwise.
+
+The image is shown until someone starts the order; after that their tile shows what's up next. Orders without an image use the first item's backdrop. Admins can also upload a picture for an order in the dashboard. An uploaded picture is used instead of the file's `image`; it's kept on the server and isn't part of the file, so it isn't exported or shared.
+
 ## Matching
 
 Each entry is matched to your library in this order:

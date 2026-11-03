@@ -45,10 +45,23 @@ public class WatchOrderResolver
         // Series are often referenced many times in one order; look each one up once.
         var seriesCache = new Dictionary<string, (BaseItem? Item, MatchStatus Status)>(StringComparer.OrdinalIgnoreCase);
 
+        // Which series each step belongs to (the library's series id when it's there, else the order's name), for
+        // making sections automatically; null for films.
+        var seriesKeys = new List<string?>();
+        var named = new List<OrderSection>();
+        var lastEntry = -1;
+
         foreach (var step in WatchOrderParser.Expand(definition))
         {
             var entry = step.EntryIndex < definition.Entries.Count ? definition.Entries[step.EntryIndex] : null;
             var optional = (entry?.Optional ?? false, entry is { Optional: true, Recommended: true });
+            if (step.EntryIndex != lastEntry && entry?.Section is { } heading && !string.IsNullOrWhiteSpace(heading))
+            {
+                named.Add(new OrderSection { Name = heading.Trim(), FirstPosition = resolved.Steps.Count + 1 });
+            }
+
+            lastEntry = step.EntryIndex;
+            var countBefore = resolved.Steps.Count;
             switch (step.Type)
             {
                 case WatchOrderEntryType.Movie:
@@ -85,9 +98,124 @@ public class WatchOrderResolver
                     break;
                 }
             }
+
+            string? key = null;
+            if (step.Type != WatchOrderEntryType.Movie)
+            {
+                var (series, _) = FindSeries(step, allowTitle, seriesCache);
+                key = series is not null ? series.Id.ToString("N") : "name:" + (step.Title ?? string.Empty).Trim().ToUpperInvariant();
+            }
+
+            for (var i = countBefore; i < resolved.Steps.Count; i++)
+            {
+                seriesKeys.Add(key);
+            }
+        }
+
+        AssignSections(resolved, named, seriesKeys);
+
+        if (definition.Image is { HasItem: true } image)
+        {
+            var kind = image.Type == "series" ? BaseItemKind.Series : BaseItemKind.Movie;
+            var ids = new WatchOrderEntry { ProviderIds = image.ProviderIds ?? new Dictionary<string, string>() }.ProviderIds;
+            resolved.ImageItemId = FindTopLevel(kind, image.Title, image.Year, ids, allowTitle).Item?.Id;
         }
 
         return resolved;
+    }
+
+    /// <summary>
+    /// Puts each step in a section: the ones the order names; failing that, one per run of a series when the order
+    /// is a few long runs of different series (films join the run they're in); failing that, one section with no
+    /// heading.
+    /// </summary>
+    /// <param name="order">The resolved order.</param>
+    /// <param name="named">The sections the order names, with their first positions.</param>
+    /// <param name="seriesKeys">For each step, which series it's from; null for films.</param>
+    internal static void AssignSections(ResolvedWatchOrder order, List<OrderSection> named, IReadOnlyList<string?> seriesKeys)
+    {
+        var steps = order.Steps;
+        var sections = new List<OrderSection>();
+        var starts = new List<int>(); // 0-based step index where each section starts
+
+        if (named.Count > 0)
+        {
+            if (named[0].FirstPosition > 1)
+            {
+                sections.Add(new OrderSection { Name = null, FirstPosition = 1 });
+                starts.Add(0);
+            }
+
+            foreach (var section in named)
+            {
+                // Two headings on entries with nothing between them: the later one wins.
+                if (starts.Count > 0 && starts[^1] == section.FirstPosition - 1)
+                {
+                    sections.RemoveAt(sections.Count - 1);
+                    starts.RemoveAt(starts.Count - 1);
+                }
+
+                sections.Add(section);
+                starts.Add(section.FirstPosition - 1);
+            }
+        }
+        else if (AutomaticSections(steps, seriesKeys) is { } runs)
+        {
+            foreach (var (start, name) in runs)
+            {
+                sections.Add(new OrderSection { Name = name, FirstPosition = start + 1 });
+                starts.Add(start);
+            }
+
+            order.SectionsAutomatic = true;
+        }
+        else
+        {
+            sections.Add(new OrderSection { Name = null, FirstPosition = 1 });
+            starts.Add(0);
+        }
+
+        for (var s = 0; s < sections.Count; s++)
+        {
+            var end = s + 1 < starts.Count ? starts[s + 1] : steps.Count;
+            sections[s].StepCount = end - starts[s];
+            for (var i = starts[s]; i < end; i++)
+            {
+                steps[i].SectionIndex = s;
+            }
+        }
+
+        order.Sections = sections;
+    }
+
+    private static List<(int Start, string Name)>? AutomaticSections(List<ResolvedStep> steps, IReadOnlyList<string?> seriesKeys)
+    {
+        const int MaxSections = 12;
+        var episodes = seriesKeys.Count(k => k is not null);
+        if (steps.Count == 0 || episodes * 2 < steps.Count)
+        {
+            return null; // mostly films: there's no run of series to split on
+        }
+
+        var runs = new List<(int Start, string Key, string Name)>();
+        for (var i = 0; i < steps.Count; i++)
+        {
+            if (seriesKeys[i] is not { } key || (runs.Count > 0 && runs[^1].Key == key))
+            {
+                continue;
+            }
+
+            if (runs.Any(r => r.Key == key) || runs.Count == MaxSections)
+            {
+                return null; // a series comes back after another one: the order hops between them
+            }
+
+            // A run starts at its first episode, or at the start of the order for the first run, so films before
+            // a series' first episode stay with the run before.
+            runs.Add((runs.Count == 0 ? 0 : i, key, steps[i].Series ?? steps[i].Label));
+        }
+
+        return runs.Count < 2 ? null : runs.Select(r => (r.Start, r.Name)).ToList();
     }
 
     /// <summary>
@@ -120,7 +248,11 @@ public class WatchOrderResolver
             Status = item is null ? MatchStatus.Missing : status,
             Note = step.Note,
             Optional = optional.Optional,
-            Recommended = optional.Recommended
+            Recommended = optional.Recommended,
+            Kind = step.Type == WatchOrderEntryType.Movie ? "Movie" : "Episode",
+            Series = step.Type == WatchOrderEntryType.Movie ? null : (item as MediaBrowser.Controller.Entities.TV.Episode)?.SeriesName is { Length: > 0 } name ? name : step.Title,
+            Season = step.Season,
+            Episode = step.Type == WatchOrderEntryType.Season ? item?.IndexNumber : step.Episode
         });
     }
 

@@ -25,6 +25,10 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
         serviceCollection.AddSingleton<OrderOriginStore>();
         serviceCollection.AddSingleton<ReadyMadeOrders>();
         serviceCollection.AddSingleton<OrderLinks>();
+        serviceCollection.AddSingleton<OrderImageStore>();
+
+        // Keeps the server's copy of each order's picture in line with its image link.
+        serviceCollection.AddHostedService<OrderImageSync>();
 
         // Re-resolves orders when items are added to or removed from the library.
         serviceCollection.AddHostedService<LibraryChangeListener>();

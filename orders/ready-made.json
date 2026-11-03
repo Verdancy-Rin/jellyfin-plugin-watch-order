@@ -5,6 +5,7 @@
       "name": "Marvel Cinematic Universe",
       "orders": [
         "mcu/mcu-complete.json",
+        "mcu/mcu-chronological.json",
         "mcu/mcu-infinity-saga.json",
         "mcu/mcu-multiverse-saga.json",
         "mcu/mcu-phase-1.json",

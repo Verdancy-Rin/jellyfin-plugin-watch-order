@@ -44,6 +44,8 @@ public class WatchOrderProgressService
             OrderId = order.Id,
             OrderName = order.Name,
             OrderDescription = order.Description,
+            Sections = order.Sections,
+            SectionsAutomatic = order.SectionsAutomatic,
             SkipOptional = mode != OptionalMode.WatchAll,
             OptionalMode = mode
         };

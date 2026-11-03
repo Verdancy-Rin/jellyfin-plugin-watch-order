@@ -48,6 +48,36 @@ public sealed class ResolvedStep
 
     /// <summary>Gets or sets a value indicating whether the entry is optional but recommended.</summary>
     public bool Recommended { get; set; }
+
+    /// <summary>Gets or sets <c>Movie</c> or <c>Episode</c>.</summary>
+    public string Kind { get; set; } = "Movie";
+
+    /// <summary>Gets or sets the series name, for an episode (from the library when it's there, else the order).</summary>
+    public string? Series { get; set; }
+
+    /// <summary>Gets or sets the season number, for an episode.</summary>
+    public int? Season { get; set; }
+
+    /// <summary>Gets or sets the episode number, for an episode (null for a season missing from the library).</summary>
+    public int? Episode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the 0-based index of the section the step is in, within <see cref="ResolvedWatchOrder.Sections"/>.
+    /// </summary>
+    public int SectionIndex { get; set; }
+}
+
+/// <summary>A section of an order: a heading over a run of steps.</summary>
+public sealed class OrderSection
+{
+    /// <summary>Gets or sets the heading; null for steps before an order's first heading.</summary>
+    public string? Name { get; set; }
+
+    /// <summary>Gets or sets the position of the section's first step (1-based).</summary>
+    public int FirstPosition { get; set; }
+
+    /// <summary>Gets or sets how many steps it holds.</summary>
+    public int StepCount { get; set; }
 }
 
 /// <summary>
@@ -67,6 +97,18 @@ public sealed class ResolvedWatchOrder
 
     /// <summary>Gets or sets when the order was last matched.</summary>
     public DateTime ResolvedAtUtc { get; set; }
+
+    /// <summary>
+    /// Gets or sets the order's sections, in order: the ones it names, or ones made from its runs of series, or
+    /// a single section with no heading.
+    /// </summary>
+    public List<OrderSection> Sections { get; set; } = new();
+
+    /// <summary>Gets or sets a value indicating whether the sections were made from the order's runs of series.</summary>
+    public bool SectionsAutomatic { get; set; }
+
+    /// <summary>Gets or sets the library item whose backdrop is the order's image, when it names one that's there.</summary>
+    public Guid? ImageItemId { get; set; }
 
     /// <summary>Gets or sets the resolved steps, in order.</summary>
     public List<ResolvedStep> Steps { get; set; } = new();

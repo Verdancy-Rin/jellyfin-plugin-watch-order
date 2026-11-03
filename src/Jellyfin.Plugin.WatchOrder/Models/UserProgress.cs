@@ -41,6 +41,19 @@ public sealed class RunInfo
 }
 
 /// <summary>
+/// The order's own image, when it has one: a library item's backdrop, or a picture the server keeps
+/// (served by <c>GET WatchOrder/Orders/{id}/Image</c>).
+/// </summary>
+public sealed class OrderArtwork
+{
+    /// <summary>Gets or sets the library item whose backdrop to show.</summary>
+    public Guid? ItemId { get; set; }
+
+    /// <summary>Gets or sets the version of the server's picture, when that's the image; changes when it does.</summary>
+    public string? PictureVersion { get; set; }
+}
+
+/// <summary>
 /// A resolved step with the requesting user's played state.
 /// </summary>
 public sealed class UserStep
@@ -101,6 +114,15 @@ public sealed class UserProgress
 
     /// <summary>Gets or sets how many items are skipped because they're optional.</summary>
     public int SkippedCount { get; set; }
+
+    /// <summary>Gets or sets the order's sections; each step's <c>SectionIndex</c> points into this.</summary>
+    public List<OrderSection> Sections { get; set; } = new();
+
+    /// <summary>Gets or sets a value indicating whether the sections were made from the order's runs of series.</summary>
+    public bool SectionsAutomatic { get; set; }
+
+    /// <summary>Gets or sets the order's own image, or null when it has none.</summary>
+    public OrderArtwork? Artwork { get; set; }
 
     /// <summary>Gets or sets every step with played state.</summary>
     public List<UserStep> Steps { get; set; } = new();

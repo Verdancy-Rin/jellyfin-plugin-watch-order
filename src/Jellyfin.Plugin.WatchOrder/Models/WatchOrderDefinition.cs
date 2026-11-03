@@ -37,6 +37,12 @@ public sealed class WatchOrderDefinition
     /// </summary>
     public string? Source { get; set; }
 
+    /// <summary>
+    /// Gets or sets the image on the order's tile and page header: a film or show from the library, a picture on the
+    /// web, or both. Null for the default (the first item's backdrop, then what's up next).
+    /// </summary>
+    public OrderImage? Image { get; set; }
+
     /// <summary>Gets or sets the ordered entries.</summary>
     public List<WatchOrderEntry> Entries { get; set; } = new();
 

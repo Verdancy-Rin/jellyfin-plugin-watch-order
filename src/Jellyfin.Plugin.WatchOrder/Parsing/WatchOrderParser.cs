@@ -90,6 +90,11 @@ public static partial class WatchOrderParser
             errors.Add("source must be an https:// or http:// link to where the order is published.");
         }
 
+        if (definition.Image is { } image)
+        {
+            ValidateImage(image, errors);
+        }
+
         if (definition.Entries is null || definition.Entries.Count == 0)
         {
             errors.Add("entries must contain at least one entry.");
@@ -149,6 +154,11 @@ public static partial class WatchOrderParser
                 errors.Add($"{at}: recommended only applies to optional entries; add \"optional\": true, or remove recommended.");
             }
 
+            if (e.Section is not null && string.IsNullOrWhiteSpace(e.Section))
+            {
+                errors.Add($"{at}: section needs a heading, or remove it.");
+            }
+
             if (e.Season is < 0 || e.Episode is < 0 || e.From is < 0)
             {
                 errors.Add($"{at}: season and episode numbers cannot be negative.");
@@ -204,6 +214,34 @@ public static partial class WatchOrderParser
     /// <returns><c>true</c> for an http or https link.</returns>
     public static bool IsWebLink(string text)
         => Uri.TryCreate(text.Trim(), UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
+
+    private static void ValidateImage(OrderImage image, List<string> errors)
+    {
+        if (image.Type is not null && image.Type is not ("movie" or "series"))
+        {
+            errors.Add("image.type must be \"movie\" or \"series\".");
+        }
+
+        var namesItem = !string.IsNullOrWhiteSpace(image.Title) || image.ProviderIds is { Count: > 0 };
+        if (image.Type is not null && !namesItem)
+        {
+            errors.Add("image needs a title or providerIds to find the film or show.");
+        }
+        else if (image.Type is null && namesItem)
+        {
+            errors.Add("image needs a type (\"movie\" or \"series\") to find the film or show.");
+        }
+
+        if (image.Url is { } url && !IsWebLink(url))
+        {
+            errors.Add("image.url must be an https:// or http:// link to a picture.");
+        }
+
+        if (image.Type is null && !namesItem && string.IsNullOrWhiteSpace(image.Url))
+        {
+            errors.Add("image needs a film or show (type with title or providerIds), a url, or both.");
+        }
+    }
 
     private static void RequireSeries(WatchOrderEntry e, string at, bool hasIds, List<string> errors)
     {

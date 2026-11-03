@@ -38,6 +38,15 @@ public sealed class OrderProgressSummary
     /// <summary>Gets or sets the user's current watch-through.</summary>
     public RunInfo Run { get; set; } = new();
 
+    /// <summary>Gets or sets the order's own image, or null when it has none.</summary>
+    public OrderArtwork? Artwork { get; set; }
+
+    /// <summary>Gets or sets the order's first available item, whose backdrop stands in when there's no image.</summary>
+    public Guid? FirstItemId { get; set; }
+
+    /// <summary>Gets or sets the order's last available item, whose backdrop stands in once it's finished.</summary>
+    public Guid? LastItemId { get; set; }
+
     /// <summary>Gets or sets the next unwatched item, or null when the user has finished.</summary>
     public ResolvedStep? Next { get; set; }
 }

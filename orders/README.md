@@ -3,6 +3,7 @@
 Shareable watch order files. Each file is one order; the format is described in [`docs/order-format.md`](../docs/order-format.md).
 
 - `mcu/`: the Marvel Cinematic Universe in release order. One order per phase (`mcu-phase-1` to `mcu-phase-6`), The Infinity Saga (Phases One to Three), The Multiverse Saga (Phases Four to Six), and `mcu-complete` with everything. Disney+ series are included as whole seasons; animated alternate-universe series, shorts and standalone specials are marked optional.
+  `mcu-chronological` has everything in story order, following Marvel's official Disney+ timeline, including the Netflix Defenders series and the One-Shot short films as optional (Daredevil and The Punisher are recommended).
 - `star-wars/`: `star-wars-skywalker-saga` (Episodes I to IX) and `star-wars-complete` (every canon film and series in story order, following StarWars.com's timeline). The Tales anthologies and Resistance are optional.
 - `cardcaptor-sakura/`: the 1998 series and Clear Card with their films and specials placed in story order (a three-season layout for the 1998 series, one season for Clear Card, plus specials).
 - `naruto/`: `naruto` (Naruto and Naruto Shippuden) and `naruto-and-boruto` (continuing into Boruto: Naruto Next Generations), in story order with all eleven films. Filler and most films are optional, and the ones worth watching are marked recommended.

@@ -32,7 +32,7 @@ public sealed class ReadyMadeTests : IDisposable
         var groups = ReadyMadeOrders.Load(typeof(ReadyMadeOrders).Assembly);
         Assert.Equal(new[] { "Marvel Cinematic Universe", "Star Wars", "Anime" }, groups.Select(g => g.Name));
         var ids = groups.SelectMany(g => g.Orders).Select(o => o.Id).ToList();
-        Assert.Equal(15, ids.Count);
+        Assert.Equal(16, ids.Count);
         Assert.Contains("naruto", ids);
         Assert.Contains("naruto-and-boruto", ids);
         Assert.Contains("mcu-phase-1", ids);

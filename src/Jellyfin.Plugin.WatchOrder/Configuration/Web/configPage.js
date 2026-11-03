@@ -93,14 +93,22 @@ export default function (view) {
             if (key === 'providerIds' && Object.keys(value).length === 0) {
                 continue;
             }
+            if (key === 'section') {
+                // An empty heading is no section.
+                if (String(value).trim()) {
+                    out.section = String(value).trim();
+                }
+                continue;
+            }
             out[key] = value;
         }
         return out;
     }
 
     // Fields the builder edits. Anything else in an order (from a newer plugin, or another tool) is kept as it is.
-    const KNOWN_ORDER_FIELDS = ['schemaversion', 'id', 'name', 'description', 'author', 'version', 'source', 'entries'];
-    const KNOWN_ENTRY_FIELDS = ['type', 'title', 'year', 'series', 'season', 'episode', 'from', 'to', 'providerids', 'note', 'optional', 'recommended'];
+    const KNOWN_ORDER_FIELDS = ['schemaversion', 'id', 'name', 'description', 'author', 'version', 'source', 'image', 'entries'];
+    const KNOWN_ENTRY_FIELDS = ['type', 'title', 'year', 'series', 'season', 'episode', 'from', 'to', 'providerids', 'note', 'optional', 'recommended', 'section'];
+    const KNOWN_IMAGE_FIELDS = ['type', 'title', 'year', 'providerids', 'url'];
 
     function otherFields(obj, known) {
         const out = {};
@@ -120,6 +128,7 @@ export default function (view) {
             author: pick(def, 'author') || '',
             version: pick(def, 'version') ?? '',
             source: pick(def, 'source') || '',
+            image: toDraftImage(pick(def, 'image')),
             _extra: otherFields(def, KNOWN_ORDER_FIELDS),
             entries: (pick(def, 'entries') || []).map((e) => ({
                 _uid: nextUid(),
@@ -136,7 +145,8 @@ export default function (view) {
                     providerIds: { ...(pick(e, 'providerIds') || {}) },
                     note: pick(e, 'note'),
                     optional: pick(e, 'optional') === true,
-                    recommended: pick(e, 'optional') === true && pick(e, 'recommended') === true
+                    recommended: pick(e, 'optional') === true && pick(e, 'recommended') === true,
+                    section: pick(e, 'section')
                 })
             }))
         };
@@ -152,8 +162,174 @@ export default function (view) {
             author: d.author.trim() || undefined,
             version: num(d.version),
             source: String(d.source || '').trim() || undefined,
+            image: toPayloadImage(d.image),
             entries: d.entries.map(cleanEntry)
         };
+    }
+
+    // The order's image: a film or show (type with title, year, providerIds) and/or a link (url).
+    function toDraftImage(image) {
+        if (!image) {
+            return { _extra: {} };
+        }
+        const type = String(pick(image, 'type') || '').toLowerCase() || undefined;
+        return {
+            _extra: otherFields(image, KNOWN_IMAGE_FIELDS),
+            type,
+            title: pick(image, 'title') || undefined,
+            year: pick(image, 'year') ?? undefined,
+            providerIds: { ...(pick(image, 'providerIds') || {}) },
+            url: pick(image, 'url') || ''
+        };
+    }
+
+    function toPayloadImage(image) {
+        if (!image) {
+            return undefined;
+        }
+        const out = { ...(image._extra || {}) };
+        if (image.type && (image.title || Object.keys(image.providerIds || {}).length)) {
+            out.type = image.type;
+            if (image.title) {
+                out.title = image.title;
+            }
+            if (image.year !== undefined && image.year !== null && image.year !== '') {
+                out.year = image.year;
+            }
+            if (Object.keys(image.providerIds || {}).length) {
+                out.providerIds = image.providerIds;
+            }
+        }
+        const link = String(image.url || '').trim();
+        if (link) {
+            out.url = link;
+        }
+        return Object.keys(out).length ? out : undefined;
+    }
+
+    const imageKey = (c) => `${c.type}|${Object.entries(c.providerIds || {}).sort().map(([k, v]) => `${k}=${v}`).join(',') || `${(c.title || '').toLowerCase()}|${c.year ?? ''}`}`;
+
+    /** The films and shows in the order, for "A film or show from this order". */
+    function imageChoices() {
+        const choices = [];
+        const seen = new Set();
+        const add = (c) => {
+            const key = imageKey(c);
+            if (!seen.has(key)) {
+                seen.add(key);
+                choices.push({ ...c, key });
+            }
+        };
+        if (draft.image?.type) {
+            add({ type: draft.image.type, title: draft.image.title, year: draft.image.year, providerIds: draft.image.providerIds });
+        }
+        for (const e of draft.entries) {
+            if (e.type === 'movie') {
+                add({ type: 'movie', title: e.title, year: e.year, providerIds: e.providerIds || {} });
+            } else if (e.series || Object.keys(e.providerIds || {}).length) {
+                add({ type: 'series', title: e.series, year: e.year, providerIds: e.providerIds || {} });
+            }
+        }
+        return choices;
+    }
+
+    function renderImageChoices() {
+        const select = $('#woImageItem');
+        const choices = imageChoices();
+        const current = draft.image?.type ? imageKey(draft.image) : '';
+        select.innerHTML = '<option value="">None</option>' + choices.map((c) => `<option value="${esc(c.key)}"${c.key === current ? ' selected' : ''}>${esc(`${c.title || 'Untitled'}${c.year ? ` (${c.year})` : ''} · ${c.type === 'movie' ? 'film' : 'show'}`)}</option>`).join('');
+        select._choices = choices;
+    }
+
+    function onImageItemChange() {
+        const select = $('#woImageItem');
+        const choice = (select._choices || []).find((c) => c.key === select.value);
+        draft.image = draft.image || { _extra: {} };
+        draft.image.type = choice?.type;
+        draft.image.title = choice?.title;
+        draft.image.year = choice?.year;
+        draft.image.providerIds = choice ? { ...(choice.providerIds || {}) } : {};
+        markChanged(false);
+    }
+
+    /** For a saved order: whether it has an upload, and how the link's download went. */
+    async function refreshImageStatus() {
+        const box = $('#woImageUpload');
+        box.hidden = !editingId;
+        $('#woImageUploadNote').hidden = !!editingId;
+        if (!editingId) {
+            return;
+        }
+        let image = null;
+        try {
+            image = (await getJson('WatchOrder/Orders')).find((o) => o.Id === editingId)?.Image || null;
+        } catch {
+            // Not essential.
+        }
+        showImageStatus(image);
+    }
+
+    function showImageStatus(image) {
+        const status = $('#woImageStatus');
+        const parts = [];
+        if (image?.Uploaded) {
+            parts.push('Using a picture uploaded here, in place of the image above.');
+        } else if (image?.HasItem && image.ItemFound) {
+            parts.push('Using the backdrop of the film or show above.');
+        } else if (image?.Downloaded) {
+            parts.push(`Using the picture from the link${image.HasItem ? ' (the film or show above isn\'t in the library)' : ''}.`);
+        } else if (image?.HasItem && !image.Url) {
+            parts.push('The film or show above isn\'t in the library, so the first item\'s backdrop is used.');
+        }
+        if (image?.Error) {
+            parts.push(`The picture couldn't be downloaded: ${image.Error}`);
+        }
+        status.textContent = parts.join(' ');
+        status.classList.toggle('wo-bad', !!image?.Error);
+        $('#woImageRemove').hidden = !image?.Uploaded;
+        $('#woImageRefresh').hidden = !image?.Url || !!image?.Uploaded;
+    }
+
+    async function uploadImage(file) {
+        if (!file || !editingId) {
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            showImageStatus(null);
+            $('#woImageStatus').textContent = 'That picture is over 10 MB.';
+            $('#woImageStatus').classList.add('wo-bad');
+            return;
+        }
+        Dashboard.showLoadingMsg();
+        try {
+            // Sent as the raw file (ApiClient.ajax only sends text and form fields).
+            const response = await fetch(apiUrl(`WatchOrder/Orders/${encodeURIComponent(editingId)}/Image`), {
+                method: 'POST',
+                headers: { 'Content-Type': file.type || 'application/octet-stream', Authorization: `MediaBrowser Token="${ApiClient.accessToken()}"` },
+                body: file
+            });
+            if (!response.ok) {
+                throw response;
+            }
+            showImageStatus(await response.json());
+        } catch (response) {
+            $('#woImageStatus').textContent = (await errorMessages(response)).join(' ');
+            $('#woImageStatus').classList.add('wo-bad');
+        } finally {
+            Dashboard.hideLoadingMsg();
+            $('#woImageFile').value = '';
+        }
+    }
+
+    async function imageAction(type, path) {
+        Dashboard.showLoadingMsg();
+        try {
+            showImageStatus(await ApiClient.ajax({ type, url: apiUrl(`WatchOrder/Orders/${encodeURIComponent(editingId)}/${path}`), dataType: 'json' }));
+        } catch (response) {
+            $('#woImageStatus').textContent = (await errorMessages(response)).join(' ');
+        } finally {
+            Dashboard.hideLoadingMsg();
+        }
     }
 
     function entryLabel(e) {
@@ -658,7 +834,7 @@ export default function (view) {
     }
 
     function openBuilder(def) {
-        draft = def ? toDraft(def) : { id: '', name: '', description: '', author: '', version: '', source: '', entries: [] };
+        draft = def ? toDraft(def) : { id: '', name: '', description: '', author: '', version: '', source: '', image: { _extra: {} }, entries: [] };
         editingId = def ? draft.id : null;
         idTouched = !!def;
         dirty = false;
@@ -672,6 +848,9 @@ export default function (view) {
         $('#woAuthor').value = draft.author;
         $('#woVersion').value = draft.version;
         $('#woSource').value = draft.source;
+        $('#woImageUrl').value = draft.image?.url || '';
+        $('#woImageStatus').textContent = '';
+        refreshImageStatus();
         $('#woBuilderErrors').textContent = '';
         $('#woLibrarySearch').value = '';
         $('#woLibraryResults').innerHTML = '';
@@ -681,7 +860,9 @@ export default function (view) {
         setStatus('');
         selectTab('library');
 
+        closeSectionForm();
         renderEntries();
+        $('#woEntriesScroll').scrollTop = 0;
         schedulePreview(0);
         showView(true);
     }
@@ -709,6 +890,10 @@ export default function (view) {
         renderEntries();
         markChanged(true);
 
+        // Show what was just added at the bottom of the list.
+        const scroller = $('#woEntriesScroll');
+        scroller.scrollTop = scroller.scrollHeight;
+
         const first = draft.entries.length - entries.length + 1;
         setStatus(entries.length === 1
             ? `Added "${entryLabel(entries[0])}" as entry ${first}.`
@@ -729,11 +914,18 @@ export default function (view) {
         const list = $('#woEntries');
         const count = draft.entries.length;
         $('#woNoEntries').hidden = count > 0;
+        $('#woEntriesScroll').hidden = count === 0;
 
         list.innerHTML = draft.entries.map((e, i) => {
             const status = entryStatus(e);
             const ids = Object.entries(e.providerIds || {}).map(([k, v]) => `${k} ${v}`).join(' · ');
-            return `
+            const section = e.section !== undefined && e.section !== null ? `
+                <li class="wo-section-row">
+                    <span class="material-icons segment" aria-hidden="true"></span>
+                    <input class="wo-section-input" data-section-input="${i}" value="${esc(e.section)}" placeholder="Section heading, e.g. Phase Two" aria-label="Heading of the section starting at entry ${i + 1}" />
+                    <button type="button" class="wo-icon-btn" data-section-remove="${i}" title="Remove this section heading" aria-label="Remove the section heading before entry ${i + 1}"><span class="material-icons close" aria-hidden="true"></span></button>
+                </li>` : '';
+            return `${section}
                 <li class="wo-entry${e.optional ? ' wo-entry-optional' : ''}${e.optional && e.recommended ? ' wo-entry-recommended' : ''}" data-index="${i}">
                     <span class="wo-handle material-icons drag_indicator" title="Drag to reorder" aria-hidden="true"></span>
                     <span class="wo-pos">${i + 1}</span>
@@ -753,6 +945,7 @@ export default function (view) {
                         <input class="wo-note" data-note="${i}" value="${esc(e.note || '')}" placeholder="Add a note (optional)" aria-label="Note for entry ${i + 1}" />
                     </div>
                     <div class="wo-entry-actions">
+                        <button type="button" class="wo-icon-btn" data-section-add="${i}" title="Start a section here" aria-label="Start a section at entry ${i + 1}" ${section ? 'disabled' : ''}><span class="material-icons segment" aria-hidden="true"></span></button>
                         <button type="button" class="wo-icon-btn" data-move="-1" data-index="${i}" title="Move up" aria-label="Move entry ${i + 1} up" ${i === 0 ? 'disabled' : ''}><span class="material-icons arrow_upward" aria-hidden="true"></span></button>
                         <button type="button" class="wo-icon-btn" data-move="1" data-index="${i}" title="Move down" aria-label="Move entry ${i + 1} down" ${i === count - 1 ? 'disabled' : ''}><span class="material-icons arrow_downward" aria-hidden="true"></span></button>
                         <button type="button" class="wo-icon-btn" data-remove="${i}" title="Remove" aria-label="Remove entry ${i + 1}"><span class="material-icons delete" aria-hidden="true"></span></button>
@@ -761,6 +954,109 @@ export default function (view) {
         }).join('');
 
         updateSummary();
+        renderImageChoices();
+        renderSectionsBar();
+    }
+
+    // ------------------------------------------------------- sections
+
+    const hasSection = (e) => e.section !== undefined && e.section !== null;
+
+    /** The order's sections as buttons that jump to them, and "Add a section". */
+    function renderSectionsBar() {
+        const entries = draft.entries;
+        $('#woSectionsBar').hidden = entries.length === 0;
+        if (!entries.length) {
+            closeSectionForm();
+        }
+        const starts = entries.map((e, i) => (hasSection(e) ? i : -1)).filter((i) => i >= 0);
+        $('#woSectionChips').innerHTML = starts.length
+            ? starts.map((start, n) => {
+                const end = (starts[n + 1] ?? entries.length) - 1;
+                const name = String(entries[start].section).trim() || 'Untitled section';
+                const range = start === end ? `entry ${start + 1}` : `entries ${start + 1}–${end + 1}`;
+                return `<span role="listitem"><button type="button" class="wo-section-chip" data-section-go="${start}" title="Show this section in the list">${esc(name)} <span class="wo-muted">${range}</span></button></span>`;
+            }).join('')
+            : '<span class="wo-muted">None yet. Long orders are easier to follow split into parts, such as phases or arcs.</span>';
+        if (!$('#woSectionForm').hidden) {
+            fillSectionStarts();
+        }
+    }
+
+    /** "Starts at": every entry, with the ones that already start a section marked and unavailable. */
+    function fillSectionStarts() {
+        const select = $('#woSectionStart');
+        const previous = select.value;
+        const entries = draft.entries;
+        select.innerHTML = entries.map((e, i) => `<option value="${i}"${hasSection(e) ? ' disabled' : ''}>${esc(`${i + 1}. ${entryLabel(e)}${hasSection(e) ? ` (starts "${String(e.section).trim() || 'Untitled'}")` : ''}`)}</option>`).join('');
+        if (previous !== '' && entries[Number(previous)] && !hasSection(entries[Number(previous)])) {
+            select.value = previous;
+            return;
+        }
+        // Suggest the first free entry after the last section, else the first free one.
+        const last = entries.reduce((at, e, i) => (hasSection(e) ? i : at), -1);
+        let pick = entries.findIndex((e, i) => i > last && !hasSection(e));
+        if (pick < 0) {
+            pick = entries.findIndex((e) => !hasSection(e));
+        }
+        select.value = String(Math.max(pick, 0));
+    }
+
+    function openSectionForm() {
+        const form = $('#woSectionForm');
+        form.hidden = false;
+        $('#woAddSection').setAttribute('aria-expanded', 'true');
+        $('#woSectionError').textContent = '';
+        $('#woSectionName').value = '';
+        $('#woSectionStart').value = '';
+        fillSectionStarts();
+        $('#woSectionName').focus();
+    }
+
+    function closeSectionForm(focusButton) {
+        $('#woSectionForm').hidden = true;
+        $('#woAddSection').setAttribute('aria-expanded', 'false');
+        if (focusButton) {
+            $('#woAddSection').focus();
+        }
+    }
+
+    function addSection(e) {
+        e.preventDefault();
+        const name = $('#woSectionName').value.trim();
+        const index = Number($('#woSectionStart').value);
+        const entry = draft.entries[index];
+        if (!name) {
+            $('#woSectionError').textContent = 'Give the section a heading.';
+            $('#woSectionName').focus();
+            return;
+        }
+        if (!entry || hasSection(entry)) {
+            $('#woSectionError').textContent = 'Choose an entry that doesn\'t already start a section.';
+            $('#woSectionStart').focus();
+            return;
+        }
+        entry.section = name;
+        renderEntries();
+        markChanged(false);
+        closeSectionForm(true);
+        showSectionInList(index, false);
+        setStatus(`Added the section "${name}", starting at entry ${index + 1}.`);
+    }
+
+    /** Scrolls the list to a section's heading and briefly highlights it; optionally puts focus in it. */
+    function showSectionInList(index, focus) {
+        const row = $(`#woEntries [data-section-input="${index}"]`)?.closest('.wo-section-row');
+        const scroller = $('#woEntriesScroll');
+        if (!row) {
+            return;
+        }
+        scroller.scrollTop += row.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 8;
+        row.classList.add('wo-flash');
+        setTimeout(() => row.classList.remove('wo-flash'), 1200);
+        if (focus) {
+            row.querySelector('input').focus({ preventScroll: true });
+        }
     }
 
     function updateSummary() {
@@ -777,6 +1073,26 @@ export default function (view) {
     }
 
     function onEntriesClick(e) {
+        const sectionAdd = e.target.closest('[data-section-add]');
+        const sectionRemove = e.target.closest('[data-section-remove]');
+        if (sectionAdd && !sectionAdd.disabled) {
+            const index = Number(sectionAdd.dataset.sectionAdd);
+            draft.entries[index].section = '';
+            renderEntries();
+            markChanged(false);
+            $(`#woEntries [data-section-input="${index}"]`)?.focus();
+            return;
+        }
+        if (sectionRemove) {
+            const index = Number(sectionRemove.dataset.sectionRemove);
+            delete draft.entries[index].section;
+            renderEntries();
+            markChanged(false);
+            setStatus(`Removed the section heading before "${entryLabel(draft.entries[index])}".`);
+            $(`#woEntries [data-section-add="${index}"]`)?.focus();
+            return;
+        }
+
         const moveBtn = e.target.closest('[data-move]');
         const removeBtn = e.target.closest('[data-remove]');
 
@@ -832,6 +1148,13 @@ export default function (view) {
     }
 
     function onNoteInput(e) {
+        const sectionIndex = e.target.dataset.sectionInput;
+        if (sectionIndex !== undefined) {
+            draft.entries[Number(sectionIndex)].section = e.target.value;
+            markChanged(false);
+            renderSectionsBar(); // keep the section buttons' names in step
+            return;
+        }
         const index = e.target.dataset.note;
         if (index !== undefined) {
             draft.entries[Number(index)].note = e.target.value;
@@ -876,6 +1199,15 @@ export default function (view) {
     function onDragOver(e) {
         if (dragFrom < 0) {
             return;
+        }
+        // Near the top or bottom edge of the list, scroll it, so a row can be dragged anywhere in a long order.
+        const scroller = $('#woEntriesScroll');
+        const box = scroller.getBoundingClientRect();
+        const edge = Math.min(56, box.height / 4);
+        if (e.clientY < box.top + edge) {
+            scroller.scrollTop -= Math.ceil((box.top + edge - e.clientY) / 3);
+        } else if (e.clientY > box.bottom - edge) {
+            scroller.scrollTop += Math.ceil((e.clientY - (box.bottom - edge)) / 3);
         }
         const pos = dropPosition(e);
         if (!pos) {
@@ -967,6 +1299,8 @@ export default function (view) {
         draft.author = $('#woAuthor').value;
         draft.version = $('#woVersion').value;
         draft.source = $('#woSource').value;
+        draft.image = draft.image || { _extra: {} };
+        draft.image.url = $('#woImageUrl').value;
     }
 
     function onNameInput() {
@@ -1412,6 +1746,27 @@ export default function (view) {
     $('#woAuthor').addEventListener('input', () => markChanged(false));
     $('#woVersion').addEventListener('input', () => markChanged(false));
     $('#woSource').addEventListener('input', () => markChanged(false));
+    $('#woImageItem').addEventListener('change', onImageItemChange);
+    $('#woAddSection').addEventListener('click', () => ($('#woSectionForm').hidden ? openSectionForm() : closeSectionForm(true)));
+    $('#woSectionCancel').addEventListener('click', () => closeSectionForm(true));
+    $('#woSectionForm').addEventListener('submit', addSection);
+    $('#woSectionForm').addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeSectionForm(true);
+        }
+    });
+    $('#woSectionChips').addEventListener('click', (e) => {
+        const chip = e.target.closest('[data-section-go]');
+        if (chip) {
+            showSectionInList(Number(chip.dataset.sectionGo), true);
+        }
+    });
+    $('#woImageUrl').addEventListener('input', () => markChanged(false));
+    $('#woImageUploadButton').addEventListener('click', () => $('#woImageFile').click());
+    $('#woImageFile').addEventListener('change', () => uploadImage($('#woImageFile').files[0]));
+    $('#woImageRemove').addEventListener('click', () => imageAction('DELETE', 'Image'));
+    $('#woImageRefresh').addEventListener('click', () => imageAction('POST', 'Image/Refresh'));
 
     const entries = $('#woEntries');
     entries.addEventListener('click', onEntriesClick);

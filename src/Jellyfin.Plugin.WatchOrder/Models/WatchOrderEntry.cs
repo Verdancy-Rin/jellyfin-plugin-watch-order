@@ -96,6 +96,12 @@ public sealed class WatchOrderEntry
     /// </summary>
     public bool Recommended { get; set; }
 
+    /// <summary>
+    /// Gets or sets the heading of a section that starts at this entry, e.g. "Phase Two". Everything from here until
+    /// the next entry with a section is in it. Older plugin versions ignore it.
+    /// </summary>
+    public string? Section { get; set; }
+
     /// <summary>Gets or sets fields this version of the plugin doesn't know; kept as they are.</summary>
     [System.Text.Json.Serialization.JsonExtensionData]
     public Dictionary<string, System.Text.Json.JsonElement>? Extra { get; set; }

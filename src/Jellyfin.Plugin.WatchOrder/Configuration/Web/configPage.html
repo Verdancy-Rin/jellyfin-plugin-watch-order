@@ -58,6 +58,36 @@
             .wo-dropzone .emby-button > .material-icons { margin-right: .3em; }
 
             .wo-entries { list-style: none; margin: 0; padding: 0; }
+            /* Long orders scroll inside the list, so the add-entries tools below stay close. */
+            .wo-entries-scroll { max-height: min(36em, 62vh); overflow-y: auto; overscroll-behavior: contain; padding: .4em .5em .4em .4em;
+              border: 1px solid var(--wo-border); border-radius: 8px; margin-bottom: 1em; scrollbar-gutter: stable; }
+            .wo-entries-scroll > .wo-entries > :last-child { margin-bottom: 0; }
+            .wo-image { border: 1px solid var(--wo-border); border-radius: 6px; padding: .5em 1em .25em; margin: 0 0 1.5em; }
+            .wo-image legend { padding: 0 .4em; font-weight: 600; }
+            .wo-image-help { margin: 0 0 1em; }
+            .wo-image-upload { display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; margin: 0 0 1em; }
+            .wo-image-upload > .emby-button, .wo-image-upload > [is="emby-button"] { margin: 0; }
+            .wo-image-upload .material-icons { margin-right: .3em; }
+            .wo-image-status { flex: 1 1 100%; }
+            .wo-image-status.wo-bad { color: var(--wo-bad); }
+            .wo-sections-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .75em; margin: 0 0 .75em; }
+            .wo-sections-label { font-weight: 600; opacity: .85; }
+            .wo-section-chips { display: flex; flex-wrap: wrap; gap: .4em; flex: 1 1 auto; }
+            .wo-section-chip { font: inherit; font-size: .9em; cursor: pointer; border-radius: 999px; padding: .35em .85em; min-height: 2.4em;
+              border: 1px solid var(--wo-border); background: var(--wo-soft); color: inherit; }
+            .wo-section-chip:hover, .wo-section-chip:focus-visible { border-color: currentColor; outline: none; }
+            .wo-section-chip .wo-muted { margin-left: .4em; }
+            .wo-sections-bar > .emby-button, .wo-sections-bar > [is="emby-button"] { margin: 0 0 0 auto; }
+            .wo-sections-bar .material-icons { margin-right: .3em; }
+            .wo-section-form { border: 1px solid var(--wo-border); border-radius: 8px; padding: 1em 1em .5em; margin: 0 0 1em; background: var(--wo-soft); }
+            .wo-section-form .fieldDescription { margin: -.25em 0 .75em; }
+            .wo-section-form-actions { display: flex; gap: .5em; flex-wrap: wrap; }
+            .wo-section-form-actions > .emby-button, .wo-section-form-actions > [is="emby-button"] { margin: 0; }
+            .wo-section-row.wo-flash .wo-section-input { box-shadow: 0 0 0 2px var(--jf-palette-primary-main, #00a4dc); transition: box-shadow .3s; }
+            .wo-section-row { display: flex; align-items: center; gap: .5em; margin: 1em 0 .4em; padding: 0 .25em; }
+            .wo-section-row > .material-icons { opacity: .8; }
+            .wo-section-input { flex: 1; min-width: 0; font: inherit; font-size: 1.1em; font-weight: 600; padding: .45em .6em; border-radius: 4px;
+              border: 1px solid var(--wo-border); background: var(--wo-soft); color: inherit; }
             .wo-entry { display: flex; align-items: flex-start; gap: .6em; padding: .6em .5em; border: 1px solid var(--wo-border); border-radius: 6px; margin-bottom: .4em; background: var(--wo-soft); }
             .wo-entry.wo-dragging { opacity: .4; }
             .wo-entry.wo-drop-before { box-shadow: 0 -3px 0 0 currentColor; }
@@ -274,11 +304,57 @@
                         </div>
                     </div>
 
+                    <fieldset class="wo-image" id="woImageBox">
+                        <legend>Image</legend>
+                        <div class="fieldDescription wo-image-help">Shown on the order's tile and at the top of its page until someone starts it; after that they see what's up next. Without one, the first item's backdrop is used.</div>
+                        <div class="wo-row">
+                            <div class="selectContainer">
+                                <select is="emby-select" id="woImageItem" label="A film or show from this order"></select>
+                                <div class="fieldDescription">Uses its backdrop from your library.</div>
+                            </div>
+                            <div class="inputContainer">
+                                <input is="emby-input" type="url" id="woImageUrl" label="Or a picture on the web (optional)" placeholder="https://" />
+                                <div class="fieldDescription">A JPEG, PNG or WebP of up to 10 MB. The server downloads it and keeps its own copy, so the link can stop working later. Used when the film or show above isn't in the library.</div>
+                            </div>
+                        </div>
+                        <div class="wo-image-upload" id="woImageUpload" hidden>
+                            <span class="wo-image-status" id="woImageStatus" role="status"></span>
+                            <button is="emby-button" type="button" class="raised" id="woImageUploadButton"><span class="material-icons upload" aria-hidden="true"></span><span>Upload a picture</span></button>
+                            <input type="file" id="woImageFile" accept="image/jpeg,image/png,image/webp" hidden />
+                            <button is="emby-button" type="button" class="raised button-alt" id="woImageRemove" hidden><span>Remove the upload</span></button>
+                            <button is="emby-button" type="button" class="raised button-alt" id="woImageRefresh" hidden><span>Download again</span></button>
+                        </div>
+                        <div class="fieldDescription" id="woImageUploadNote">Save the order to upload a picture of your own instead. An upload stays on this server and isn't part of the order's file.</div>
+                    </fieldset>
+
                     <div class="wo-header">
                         <h3 class="sectionTitle">Entries</h3>
                         <span id="woSummary" class="wo-muted"></span>
                     </div>
-                    <ol id="woEntries" class="wo-entries" aria-label="Entries in viewing order"></ol>
+                    <div class="wo-sections-bar" id="woSectionsBar" hidden>
+                        <span class="wo-sections-label" id="woSectionsLabel">Sections</span>
+                        <div class="wo-section-chips" id="woSectionChips" role="list" aria-labelledby="woSectionsLabel"></div>
+                        <button is="emby-button" type="button" class="raised" id="woAddSection" aria-expanded="false" aria-controls="woSectionForm"><span class="material-icons segment" aria-hidden="true"></span><span>Add a section</span></button>
+                    </div>
+                    <form class="wo-section-form" id="woSectionForm" hidden>
+                        <div class="wo-row wo-row-end">
+                            <div class="inputContainer">
+                                <input is="emby-input" type="text" id="woSectionName" label="Section heading" placeholder="e.g. Phase Two" autocomplete="off" />
+                            </div>
+                            <div class="selectContainer">
+                                <select is="emby-select" id="woSectionStart" label="Starts at"></select>
+                            </div>
+                        </div>
+                        <div class="fieldDescription">Everything from that entry until the next section is in it. Viewers can fold sections away, and the order's page opens at the one they're up to.</div>
+                        <div class="wo-section-form-actions">
+                            <button is="emby-button" type="submit" class="raised button-submit"><span>Add section</span></button>
+                            <button is="emby-button" type="button" class="raised button-cancel" id="woSectionCancel"><span>Cancel</span></button>
+                        </div>
+                        <div class="wo-errors" id="woSectionError" role="alert"></div>
+                    </form>
+                    <div id="woEntriesScroll" class="wo-entries-scroll" hidden>
+                        <ol id="woEntries" class="wo-entries" aria-label="Entries in viewing order"></ol>
+                    </div>
                     <p id="woNoEntries" class="wo-hint">No entries yet. Add films and episodes below; drag rows to reorder.</p>
                     <div id="woBuilderErrors" class="wo-errors" role="alert"></div>
 

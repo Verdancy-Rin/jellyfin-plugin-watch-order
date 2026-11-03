@@ -34,6 +34,7 @@ public class WatchOrderController : ControllerBase
     private readonly OrderOriginStore _origins;
     private readonly ReadyMadeOrders _readyMade;
     private readonly OrderLinks _links;
+    private readonly OrderImageStore _images;
 
     public WatchOrderController(
         WatchOrderService service,
@@ -44,8 +45,10 @@ public class WatchOrderController : ControllerBase
         OrderStatsService stats,
         OrderOriginStore origins,
         ReadyMadeOrders readyMade,
-        OrderLinks links)
+        OrderLinks links,
+        OrderImageStore images)
     {
+        _images = images;
         _origins = origins;
         _readyMade = readyMade;
         _links = links;
@@ -76,6 +79,7 @@ public class WatchOrderController : ControllerBase
                 d.Source,
                 EntryCount = d.Entries.Count,
                 MissingCount = _service.Get(d.Id)?.MissingCount,
+                Image = ImageStatusFor(d),
                 Origin = origin?.Kind,
                 OriginUrl = origin?.Url,
                 Edited = origin is not null && OrderOriginStore.IsEdited(origin, d),
@@ -120,6 +124,9 @@ public class WatchOrderController : ControllerBase
                 HomeState = homeState,
                 OnHomeScreen = UserStateStore.IsOnHomeScreen(homeState, progress.Run.Chosen, progress.Next is null),
                 Run = progress.Run,
+                Artwork = ArtworkFor(order),
+                FirstItemId = progress.Steps.FirstOrDefault(s => s.Available)?.Step.ItemId,
+                LastItemId = progress.Steps.LastOrDefault(s => s.Available && !s.Skipped)?.Step.ItemId,
                 Next = progress.Next?.Step
             });
         }
@@ -332,6 +339,7 @@ public class WatchOrderController : ControllerBase
             return NotFound();
         }
 
+        progress.Artwork = ArtworkFor(order);
         progress.HomeState = _userState.GetHomeState(userId, id);
         progress.OnHomeScreen = UserStateStore.IsOnHomeScreen(progress.HomeState, progress.Run.Chosen, progress.Next is null);
         var mode = UserStateStore.NormaliseAutoplayMode(Plugin.Instance?.Configuration.PlaylistSync);
@@ -457,6 +465,88 @@ public class WatchOrderController : ControllerBase
         }
 
         return Ok(resolved);
+    }
+
+    /// <summary>Gets an order's picture: an admin's upload, or the server's copy of the order's image link.</summary>
+    /// <param name="id">The order id.</param>
+    /// <returns>The picture, or 404.</returns>
+    [HttpGet("Orders/{id}/Image")]
+    [AllowAnonymous]
+    [Produces("image/jpeg", "image/png", "image/webp")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult GetImage([FromRoute] string id)
+    {
+        if (_images.Open(id) is not { } picture)
+        {
+            return NotFound();
+        }
+
+        // The page asks for it with ?v=<version>, so it can be cached for as long as it's that version.
+        Response.Headers.CacheControl = "public, max-age=604800";
+        return PhysicalFile(picture.Path, picture.ContentType);
+    }
+
+    /// <summary>Uploads a picture for an order, used in place of its image. JPEG, PNG or WebP, up to 10 MB.</summary>
+    /// <param name="id">The order id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The order's image status, or an error.</returns>
+    [HttpPost("Orders/{id}/Image")]
+    [Authorize(Policy = AdminPolicy)]
+    [RequestSizeLimit(OrderImageStore.MaxBytes + 1024)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> UploadImage([FromRoute] string id, CancellationToken cancellationToken)
+    {
+        if (StoredDefinition(id) is not { } definition)
+        {
+            return NotFound();
+        }
+
+        using var buffer = new MemoryStream();
+        await Request.Body.CopyToAsync(buffer, cancellationToken).ConfigureAwait(false);
+        var (_, error) = _images.SaveUpload(id, buffer.ToArray());
+        return error is null ? Ok(ImageStatusFor(definition)) : BadRequest(new { Errors = new[] { error } });
+    }
+
+    /// <summary>Removes an order's uploaded picture (its image link, if any, is downloaded again).</summary>
+    /// <param name="id">The order id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The order's image status.</returns>
+    [HttpDelete("Orders/{id}/Image")]
+    [Authorize(Policy = AdminPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> RemoveImage([FromRoute] string id, CancellationToken cancellationToken)
+    {
+        if (StoredDefinition(id) is not { } definition)
+        {
+            return NotFound();
+        }
+
+        _images.Remove(id);
+        await _images.SyncAsync(definition, false, cancellationToken).ConfigureAwait(false);
+        return Ok(ImageStatusFor(definition));
+    }
+
+    /// <summary>Downloads an order's image link again.</summary>
+    /// <param name="id">The order id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The order's image status.</returns>
+    [HttpPost("Orders/{id}/Image/Refresh")]
+    [Authorize(Policy = AdminPolicy)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> RefreshImage([FromRoute] string id, CancellationToken cancellationToken)
+    {
+        if (StoredDefinition(id) is not { } definition)
+        {
+            return NotFound();
+        }
+
+        await _images.SyncAsync(definition, true, cancellationToken).ConfigureAwait(false);
+        return Ok(ImageStatusFor(definition));
     }
 
     /// <summary>
@@ -586,5 +676,42 @@ public class WatchOrderController : ControllerBase
     {
         var value = User.FindFirst(UserIdClaim)?.Value;
         return Guid.TryParse(value, out var id) ? id : null;
+    }
+
+    /// <summary>
+    /// The order's own image as viewers see it: an uploaded picture first, then the library item it names (when
+    /// that's in the library), then the server's copy of its image link.
+    /// </summary>
+    private OrderArtwork? ArtworkFor(ResolvedWatchOrder order)
+    {
+        var stored = _images.Get(order.Id);
+        var version = _images.VersionOf(order.Id);
+        if (stored is { Kind: "Upload" } && version is not null)
+        {
+            return new OrderArtwork { PictureVersion = version };
+        }
+
+        if (order.ImageItemId is { } itemId)
+        {
+            return new OrderArtwork { ItemId = itemId };
+        }
+
+        return version is null ? null : new OrderArtwork { PictureVersion = version };
+    }
+
+    private object ImageStatusFor(WatchOrderDefinition definition)
+    {
+        var stored = _images.Get(definition.Id);
+        var resolved = _service.Get(definition.Id);
+        return new
+        {
+            Uploaded = stored is { Kind: "Upload" },
+            Url = definition.Image?.Url,
+            HasItem = definition.Image?.HasItem ?? false,
+            ItemFound = resolved?.ImageItemId is not null,
+            Downloaded = stored is { Kind: "Link", File: not null },
+            stored?.Error,
+            Version = _images.VersionOf(definition.Id)
+        };
     }
 }
