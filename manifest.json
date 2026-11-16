@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Verdancy-Rin/jellyfin-plugin-watch-order/main/images/watch-order.png",
     "versions": [
       {
+        "version": "1.2.0.0",
+        "changelog": "- New: long orders are much easier to follow. An order's page opens with a backdrop header and an Up next card, then shows the order as a timeline that fills in as you watch. Sections fold away and the page opens at the one you're up to, a run of episodes from one season is a single row that opens to its episodes, and films sit between seasons where they belong. Jump to Up next and search within an order find your place quickly.\n- New: sections. Order authors can add headings such as \"Phase One\" in the builder (or with \"section\" in the file); orders that are a few long runs of different series, like Naruto, get sections automatically. The MCU ready-made orders now have their phases as sections (update them under Ready-made orders).\n- New: order artwork. Each order can choose its image: the backdrop of a film or show in the library, a picture from the web (the server keeps its own copy), or an upload. Order cards on the Watch Orders page show it until you start the order, then what's up next.\n- New ready-made order: Marvel Cinematic Universe: Story Order, following Marvel's official Disney+ timeline, with the Netflix Defenders series and the One-Shot short films as optional.\n- Builder: a Sections bar with Add a section, and long lists of entries scroll inside their own box.\n",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/releases/download/v1.2.0.0/watch-order_1.2.0.0.zip",
+        "checksum": "62bff14833508f1d8a514911389fd922",
+        "timestamp": "2026-11-03T18:26:47Z"
+      },
+      {
         "version": "1.1.0.0",
         "changelog": "- New: optional but recommended entries. Order authors can mark optional entries (filler, side stories, films) that are worth watching anyway, and each viewer chooses per order to watch all optional entries, skip them but keep the recommended ones, or skip them all. Progress, Up next, autoplay and playlists all follow the choice. Anyone who had chosen to skip optional entries keeps skipping them all.\n- New ready-made orders under Anime: Naruto (Naruto and Naruto Shippuden) and Naruto and Boruto (continuing into Boruto: Naruto Next Generations), with every film placed in story order and the filler worth watching marked recommended.\n",
         "targetAbi": "12.1.0.0",
