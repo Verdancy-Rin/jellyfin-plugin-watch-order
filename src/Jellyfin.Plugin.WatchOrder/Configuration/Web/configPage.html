@@ -192,8 +192,71 @@
             .wo-import-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18em, 1fr)); gap: 1em; }
             .wo-import-box { border: 1px solid var(--wo-border); border-radius: .6em; padding: 1em 1em 1.1em; }
             .wo-import-box .inputContainer { margin-bottom: .75em; }
-            #woImportJson { font-family: monospace; min-height: 5em; }
-            #woSettingsForm .emby-button[type="submit"] { margin-top: 1em; }
+            .wo-field-label { display: block; margin-bottom: .35em; }
+            .wo-textarea { display: block; width: 100%; box-sizing: border-box; min-height: 5.5em; resize: vertical; padding: .55em .7em; border-radius: .3em;
+              border: 1px solid var(--wo-border); background: var(--jf-palette-FilledInput-bg, var(--wo-soft)); color: inherit; font: .85em/1.45 monospace; }
+            .wo-textarea:focus { outline: 2px solid var(--wo-accent); outline-offset: -1px; }
+
+            /* Ready-made catalogue */
+            .wo-rm-tools { display: flex; flex-wrap: wrap; align-items: center; gap: .6em 1em; margin: .25em 0 .5em; }
+            .wo-rm-filters { display: flex; flex-wrap: wrap; gap: .4em; flex: 1 1 auto; }
+            .wo-rm-filter { min-height: 2.4em; padding: 0 1em; border-radius: 999px; border: 1px solid var(--wo-border); background: none; color: inherit; font: inherit; font-size: .9em; cursor: pointer; }
+            .wo-rm-filter:hover, .wo-rm-filter:focus-visible { border-color: currentColor; outline: none; }
+            .wo-rm-filter[aria-pressed="true"] { background: color-mix(in srgb, var(--wo-accent) 18%, transparent); border-color: color-mix(in srgb, var(--wo-accent) 55%, transparent); }
+            .wo-rm-tools .wo-search { flex: 0 1 15em; }
+            .wo-rm-group h4 { margin: 1.25em 0 .6em; font-size: 1em; font-weight: 600; }
+            .wo-rm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(14em, 1fr)); gap: .75em; }
+            .wo-rm-card { display: flex; flex-direction: column; border: 1px solid var(--wo-border); border-radius: .65em; overflow: hidden; background: var(--wo-panel); }
+            .wo-rm-band { height: 4.25em; display: flex; align-items: flex-end; padding: .5em .75em; box-sizing: border-box; background: hsl(var(--wo-hue, 200) 30% 30%);
+              color: #fff; font-size: .75em; font-weight: 600; letter-spacing: .04em; }
+            .wo-rm-body { display: flex; flex-direction: column; gap: .3em; padding: .75em .9em .9em; flex: 1; }
+            .wo-rm-name { font-weight: 600; line-height: 1.3; }
+            .wo-rm-meta { font-size: .85em; color: var(--wo-text2); }
+            .wo-rm-lib { font-size: .85em; display: flex; align-items: center; gap: .45em; }
+            .wo-rm-lib::before { content: ""; width: .55em; height: .55em; border-radius: 50%; background: var(--wo-dot, var(--wo-ok)); flex: none; }
+            .wo-rm-desc { font-size: .85em; color: var(--wo-text2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+            .wo-rm-foot { margin-top: auto; padding-top: .5em; display: flex; flex-wrap: wrap; align-items: center; gap: .4em; }
+            .wo-rm-foot .emby-button { min-height: 2.4em; }
+            .wo-tag-ok { color: var(--wo-ok-text); border-color: color-mix(in srgb, var(--wo-ok) 40%, transparent); background: color-mix(in srgb, var(--wo-ok) 10%, transparent); }
+            .wo-rm-update { color: var(--wo-warn-text) !important; }
+
+            /* Settings */
+            .wo-settings { max-width: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22em), 1fr)); gap: 0 1.25em; align-items: start; }
+            .wo-set-col { min-width: 0; }
+            .wo-set-group h4 { margin: .15em 0 .5em; font-size: 1.1em; font-weight: 600; }
+            .wo-set { padding: 1em 0; border-top: 1px solid var(--wo-border); }
+            .wo-set-group h4 + .wo-set { border-top: 0; padding-top: .4em; }
+            .wo-set-name { display: block; font-weight: 500; }
+            .wo-set-help { display: block; font-size: .85em; color: var(--wo-text2); margin-top: .35em; }
+            .wo-switch-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 1em; cursor: pointer; }
+            .wo-switch { appearance: none; -webkit-appearance: none; flex: none; width: 2.6em; height: 1.5em; margin: .1em 0 0; border-radius: 1em; position: relative; cursor: pointer;
+              background: color-mix(in srgb, var(--jf-palette-text-primary, #888) 30%, transparent); transition: background .15s; }
+            .wo-switch::after { content: ""; position: absolute; top: .19em; left: .19em; width: 1.12em; height: 1.12em; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.35); transition: left .15s; }
+            .wo-switch:checked { background: var(--wo-accent); }
+            .wo-switch:checked::after { left: 1.29em; }
+            .wo-switch:focus-visible { outline: 2px solid var(--wo-accent); outline-offset: 2px; }
+            .wo-seg { display: flex; flex-wrap: wrap; gap: .25em; padding: .25em; margin-top: .6em; border-radius: .55em; border: 1px solid var(--wo-border); background: var(--wo-soft); }
+            .wo-seg label { flex: 1 1 auto; position: relative; display: flex; }
+            .wo-seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+            .wo-seg span { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; min-height: 2.3em; padding: .2em .8em; border-radius: .4em; font-size: .9em; font-weight: 500; }
+            .wo-seg label:hover span { background: var(--wo-soft); }
+            .wo-seg input:checked + span { background: var(--wo-accent); color: var(--jf-palette-primary-contrastText, #fff); }
+            .wo-seg input:focus-visible + span { outline: 2px solid var(--wo-accent); outline-offset: 2px; }
+            .wo-set-inline { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .75em; margin-top: .75em; }
+            .wo-set-action { justify-content: space-between; }
+            .wo-nowrap { white-space: nowrap; }
+            .wo-set-action .wo-set-help { margin: 0; }
+            .wo-num { width: 5.5em; box-sizing: border-box; padding: .45em .6em; border-radius: .4em; border: 1px solid var(--wo-border); background: var(--wo-soft); color: inherit; font: inherit; }
+            .wo-set.wo-off { opacity: .45; }
+            .wo-lbar { display: flex; flex-wrap: wrap; align-items: center; gap: .3em; margin-top: .6em; padding: .5em; border-radius: .5em; border: 1px dashed var(--wo-border); font-size: .8em; }
+            .wo-lbar span { padding: .2em .65em; border-radius: .35em; color: var(--wo-text2); }
+            .wo-lbar .wo-lbar-me { display: inline-flex; align-items: center; gap: .35em; color: inherit; background: color-mix(in srgb, var(--wo-accent) 20%, transparent); }
+            .wo-lbar .wo-lbar-me .material-icons { font-size: 1.2em; }
+            .wo-lbar .wo-lbar-icon { margin-left: auto; }
+            .wo-savebar { grid-column: 1 / -1; position: sticky; bottom: 1em; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75em 1em;
+              padding: .8em 1.25em; border-radius: .75em; border: 1px solid color-mix(in srgb, var(--wo-accent) 45%, transparent);
+              background: color-mix(in srgb, var(--wo-accent) 12%, var(--jf-palette-background-paper, #1c1c1c)); box-shadow: 0 .5em 1.5em rgba(0,0,0,.35); }
+            .wo-savebar-actions { display: flex; gap: .5em; }
 
             .wo-entries { list-style: none; margin: 0; padding: 0; }
             /* Long orders scroll inside the list, so the add-entries tools below stay close. */
@@ -378,7 +441,8 @@
                                 </div>
                                 <div class="wo-import-box">
                                     <div class="inputContainer">
-                                        <textarea is="emby-textarea" id="woImportJson" label="Paste an order" placeholder='{ "id": "my-order", "name": "My order", "entries": [ ... ] }'></textarea>
+                                        <label class="wo-field-label" for="woImportJson">Paste an order</label>
+                                        <textarea id="woImportJson" class="wo-textarea" spellcheck="false" placeholder='{ "id": "my-order", "name": "My order", "entries": [ ... ] }'></textarea>
                                     </div>
                                     <button is="emby-button" type="button" id="woImport" class="raised"><span>Import</span></button>
                                 </div>
@@ -397,71 +461,104 @@
                     <!-- ============ Settings ============ -->
                     <section class="wo-area" data-area-panel="settings" aria-labelledby="woSettingsTitle" hidden>
                         <h3 id="woSettingsTitle" class="wo-area-title">Settings</h3>
-                        <form id="woSettingsForm" class="wo-panel">
-                            <div class="checkboxContainer">
-                                <label>
-                                    <input is="emby-checkbox" type="checkbox" id="ShowInWebApp" />
-                                    <span>Show a Watch orders page to everyone in the web app</span>
-                                </label>
-                                <div class="fieldDescription checkboxFieldDescription">Needs the File Transformation plugin. Users may need to refresh the page after this changes.</div>
+                        <form id="woSettingsForm" class="wo-settings">
+                            <section class="wo-panel wo-set-group" aria-labelledby="woSetWeb">
+                                <div class="wo-eyebrow">For your users</div>
+                                <h4 id="woSetWeb">In the web app</h4>
+                                <div class="wo-set">
+                                    <label class="wo-switch-row">
+                                        <span><span class="wo-set-name">Watch Orders page</span>
+                                            <span class="wo-set-help">Show a Watch Orders page to everyone. Needs the File Transformation plugin; users may need to refresh after this changes.</span></span>
+                                        <input type="checkbox" class="wo-switch" role="switch" id="ShowInWebApp" />
+                                    </label>
+                                </div>
+                                <div class="wo-set" data-needs-web>
+                                    <div class="wo-set-name" id="woSetBtnLabel">Where the button appears</div>
+                                    <div class="wo-seg" role="radiogroup" id="ButtonLocation" aria-labelledby="woSetBtnLabel">
+                                        <label><input type="radio" name="ButtonLocation" value="LibraryBar" /><span>Library bar</span></label>
+                                        <label><input type="radio" name="ButtonLocation" value="TopBarIcon" /><span>Icon by the user menu</span></label>
+                                        <label><input type="radio" name="ButtonLocation" value="Both" /><span>Both</span></label>
+                                    </div>
+                                    <div class="wo-lbar" id="woBarPreview" aria-hidden="true"></div>
+                                    <div class="wo-set-help">With the library bar, it's also in the side menu, and an icon on screens too narrow for the library bar.</div>
+                                </div>
+                                <div class="wo-set" data-needs-web data-needs-bar>
+                                    <div class="wo-set-name" id="woSetPosLabel">Position in the library bar</div>
+                                    <div class="wo-seg" role="radiogroup" id="LibraryBarPosition" aria-labelledby="woSetPosLabel">
+                                        <label><input type="radio" name="LibraryBarPosition" value="End" /><span>After your libraries</span></label>
+                                        <label><input type="radio" name="LibraryBarPosition" value="AfterFavourites" /><span>Straight after Favourites</span></label>
+                                    </div>
+                                    <div class="wo-set-help">"After your libraries" puts it before the More button when some libraries don't fit.</div>
+                                </div>
+                                <div class="wo-set" data-needs-web>
+                                    <label class="wo-switch-row">
+                                        <span><span class="wo-set-name">Home screen row</span>
+                                            <span class="wo-set-help">"Up Next in Your Watch Orders": the orders each user has started, with what's up next. They can add or remove orders from it themselves.</span></span>
+                                        <input type="checkbox" class="wo-switch" role="switch" id="ShowHomeRow" />
+                                    </label>
+                                </div>
+                            </section>
+
+                            <div class="wo-set-col">
+                                <section class="wo-panel wo-set-group" aria-labelledby="woSetPlay">
+                                    <div class="wo-eyebrow">While watching</div>
+                                    <h4 id="woSetPlay">Playback</h4>
+                                    <div class="wo-set">
+                                        <div class="wo-set-name" id="woSetAutoLabel">Autoplay follows watch orders</div>
+                                        <div class="wo-seg" role="radiogroup" id="AutoplayFollow" aria-labelledby="woSetAutoLabel">
+                                            <label><input type="radio" name="AutoplayFollow" value="OptOut" /><span>On by default</span></label>
+                                            <label><input type="radio" name="AutoplayFollow" value="OptIn" /><span>Users opt in</span></label>
+                                            <label><input type="radio" name="AutoplayFollow" value="Off" /><span>Off</span></label>
+                                        </div>
+                                        <div class="wo-set-help">When something in an order a user is following starts, the order's next item is queued after it, so autoplay and "Up Next" play that instead of the usual next episode. Users change it on their Watch Orders page. Works in the web app and apps built on it; other apps are left alone.</div>
+                                    </div>
+                                    <div class="wo-set">
+                                        <div class="wo-set-name" id="woSetPlLabel">Playlists of what's left</div>
+                                        <div class="wo-seg" role="radiogroup" id="PlaylistSync" aria-labelledby="woSetPlLabel">
+                                            <label><input type="radio" name="PlaylistSync" value="OptOut" /><span>On by default</span></label>
+                                            <label><input type="radio" name="PlaylistSync" value="OptIn" /><span>Users opt in</span></label>
+                                            <label><input type="radio" name="PlaylistSync" value="Off" /><span>Off</span></label>
+                                        </div>
+                                        <div class="wo-set-help">A "Watch Order: …" playlist per order a user is following, kept up to date as they watch, so they can carry on from any Jellyfin app. It goes when they finish, and comes back for a new watch-through. Users change it per order; deleting the playlist turns it off for that order. Off removes everyone's playlists.</div>
+                                    </div>
+                                </section>
+
+                                <section class="wo-panel wo-set-group" aria-labelledby="woSetMatch">
+                                    <div class="wo-eyebrow">Your library</div>
+                                    <h4 id="woSetMatch">Matching</h4>
+                                    <div class="wo-set">
+                                        <label class="wo-switch-row">
+                                            <span><span class="wo-set-name">Re-match when the library changes</span>
+                                                <span class="wo-set-help">New films and episodes join their orders on their own.</span></span>
+                                            <input type="checkbox" class="wo-switch" role="switch" id="AutoRefreshOnLibraryChange" />
+                                        </label>
+                                        <div class="wo-set-inline" data-needs-refresh>
+                                            <label for="RefreshDebounceSeconds">Wait after the last change</label>
+                                            <span class="wo-nowrap"><input type="number" id="RefreshDebounceSeconds" min="5" step="1" class="wo-num" />
+                                            <span class="wo-muted">seconds</span></span>
+                                        </div>
+                                    </div>
+                                    <div class="wo-set">
+                                        <label class="wo-switch-row">
+                                            <span><span class="wo-set-name">Fall back to title and year</span>
+                                                <span class="wo-set-help">When an entry's provider IDs don't match anything in your library. Matches found this way are marked so you can check them.</span></span>
+                                            <input type="checkbox" class="wo-switch" role="switch" id="AllowTitleMatching" />
+                                        </label>
+                                    </div>
+                                    <div class="wo-set wo-set-inline wo-set-action">
+                                        <span class="wo-set-help">Match every order against your library now.</span>
+                                        <button is="emby-button" type="button" class="raised" data-rematch><span class="material-icons refresh" aria-hidden="true"></span><span>Re-match all orders</span></button>
+                                    </div>
+                                </section>
                             </div>
-                            <div class="selectContainer">
-                                <select is="emby-select" id="ButtonLocation" label="Where the Watch Orders button appears">
-                                    <option value="LibraryBar">Library bar, next to your libraries</option>
-                                    <option value="TopBarIcon">Icon next to the user menu</option>
-                                    <option value="Both">Both</option>
-                                </select>
-                                <div class="fieldDescription">With the library bar, it also appears in the side menu, and as an icon on screens too narrow for the library bar.</div>
+
+                            <div class="wo-savebar" id="woSettingsBar" hidden>
+                                <span>You have unsaved changes.</span>
+                                <div class="wo-savebar-actions">
+                                    <button is="emby-button" type="button" class="raised button-flat" id="woSettingsDiscard"><span>Discard</span></button>
+                                    <button is="emby-button" type="submit" class="raised button-submit"><span>Save settings</span></button>
+                                </div>
                             </div>
-                            <div class="selectContainer">
-                                <select is="emby-select" id="LibraryBarPosition" label="Position in the library bar and side menu">
-                                    <option value="End">After your libraries</option>
-                                    <option value="AfterFavourites">Straight after Favourites</option>
-                                </select>
-                                <div class="fieldDescription">"After your libraries" puts it before the More button when some libraries don't fit.</div>
-                            </div>
-                            <div class="checkboxContainer">
-                                <label>
-                                    <input is="emby-checkbox" type="checkbox" id="ShowHomeRow" />
-                                    <span>Show an "Up Next in Your Watch Orders" row on the home screen</span>
-                                </label>
-                                <div class="fieldDescription checkboxFieldDescription">Each user sees the orders they've started, with what's up next. They can add or remove orders from it themselves.</div>
-                            </div>
-                            <div class="selectContainer">
-                                <select is="emby-select" id="AutoplayFollow" label="Autoplay follows watch orders">
-                                    <option value="OptOut">On, unless a user turns it off</option>
-                                    <option value="OptIn">Users turn it on for themselves</option>
-                                    <option value="Off">Off for everyone</option>
-                                </select>
-                                <div class="fieldDescription">When something in an order a user is following starts, the order's next item is queued after it, so autoplay and "Up Next" play that instead of the usual next episode. Users change it on their Watch Orders page. Works in the web app and apps built on it; other apps are left alone.</div>
-                            </div>
-                            <div class="selectContainer">
-                                <select is="emby-select" id="PlaylistSync" label="Playlists of what's left">
-                                    <option value="OptOut">On, unless a user turns it off</option>
-                                    <option value="OptIn">Users turn it on for themselves</option>
-                                    <option value="Off">Off for everyone</option>
-                                </select>
-                                <div class="fieldDescription">Each user gets a playlist of what they have left in each order they're following ("Watch Order: …"), kept up to date as they watch, so they can carry on an order from any Jellyfin app. It goes when they finish, and comes back for a new watch-through. Users change it per order on its page; deleting the playlist turns it off for that order. Turning this off for everyone removes the playlists.</div>
-                            </div>
-                            <div class="checkboxContainer">
-                                <label>
-                                    <input is="emby-checkbox" type="checkbox" id="AutoRefreshOnLibraryChange" />
-                                    <span>Re-match orders automatically when the library changes</span>
-                                </label>
-                            </div>
-                            <div class="inputContainer">
-                                <input is="emby-input" type="number" id="RefreshDebounceSeconds" min="5" label="Wait after last library change (seconds)" />
-                            </div>
-                            <div class="checkboxContainer">
-                                <label>
-                                    <input is="emby-checkbox" type="checkbox" id="AllowTitleMatching" />
-                                    <span>Fall back to title and year when provider IDs don't match</span>
-                                </label>
-                            </div>
-                            <button is="emby-button" type="submit" class="raised button-submit block">
-                                <span>Save settings</span>
-                            </button>
-                        
                         </form>
                     </section>
                 </section>

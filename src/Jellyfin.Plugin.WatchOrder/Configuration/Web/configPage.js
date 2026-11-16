@@ -447,8 +447,7 @@ export default function (view) {
         if (o.FirstItemId) {
             sources.push(imageUrl(o.FirstItemId, 'Backdrop'), imageUrl(o.FirstItemId, 'Primary'));
         }
-        const words = String(o.Name || o.Id).split(/[\s:]+/).filter((w) => /^[\p{L}\p{N}]/u.test(w));
-        const initials = (words.length > 1 ? words.slice(0, 3).map((w) => w[0]) : [...(words[0] || '?').slice(0, 2)]).join('').toUpperCase();
+        const initials = initialsOf(o.Name || o.Id);
         let hue = 0;
         for (const c of String(o.Id)) {
             hue = (hue * 31 + c.charCodeAt(0)) % 360;
@@ -458,6 +457,12 @@ export default function (view) {
             <span class="wo-thumb-text">${esc(initials)}</span>
             ${first ? `<img alt="" loading="lazy" src="${esc(first)}" data-fallbacks="${esc(JSON.stringify(sources))}">` : ''}
         </div>`;
+    }
+
+    /** "Marvel Cinematic Universe: Story Order" → "MCU"; small joining words are skipped. */
+    function initialsOf(name) {
+        const words = String(name).split(/[\s:\-–—]+/).filter((w) => /^[\p{L}\p{N}]/u.test(w) && !/^(and|of|the|a|an|in|&)$/i.test(w));
+        return (words.length > 1 ? words.slice(0, 3).map((w) => [...w][0]) : [...(words[0] || '?')].slice(0, 2)).join('').toUpperCase();
     }
 
     function imageUrl(itemId, type) {
@@ -630,7 +635,7 @@ export default function (view) {
         const webApp = webClient.enabled && webClient.installed
             ? `<button type="button" role="menuitem" data-open-page="${esc(id)}"><span class="material-icons open_in_new" aria-hidden="true"></span><span>Open in the web app</span></button>` : '';
         const update = ordersCache.find((o) => o.Id === id)?.UpdateAvailable
-            ? '<button type="button" role="menuitem" data-go-area="add"><span class="material-icons system_update_alt" aria-hidden="true"></span><span>Update to the new version</span></button>' : '';
+            ? `<button type="button" role="menuitem" data-go-area="add" data-ready-focus="${esc(id)}"><span class="material-icons system_update_alt" aria-hidden="true"></span><span>Update to the new version</span></button>` : '';
         menu.innerHTML = `${update}${webApp}
             <button type="button" role="menuitem" data-export="${esc(id)}"><span class="material-icons download" aria-hidden="true"></span><span>Export file</span></button>
             <hr>
@@ -685,6 +690,8 @@ export default function (view) {
         IdTaken: { text: 'You have a different order with this ID', button: 'Replace yours', cls: '' }
     };
 
+    let readyFilter = 'All';
+
     async function loadReadyMade() {
         const box = $('#woReadyMade');
         let groups;
@@ -694,31 +701,102 @@ export default function (view) {
             box.innerHTML = '<p class="wo-errors">The ready-made orders couldn\'t be loaded.</p>';
             return;
         }
-        box.innerHTML = groups.map((g) => `
-            <h4>${esc(g.Group)}</h4>
-            <ul class="wo-list">${g.Orders.map(readyMadeRow).join('')}</ul>`).join('');
+        if (!groups.some((g) => g.Group === readyFilter)) {
+            readyFilter = 'All';
+        }
+        const count = groups.reduce((n, g) => n + g.Orders.length, 0);
+        const search = $('#woReadySearch')?.value || '';
+        box.innerHTML = `
+            <div class="wo-rm-tools">
+                ${groups.length > 1 ? `<div class="wo-rm-filters" role="group" aria-label="Franchise">${['All', ...groups.map((g) => g.Group)].map((name) => `
+                    <button type="button" class="wo-rm-filter" data-ready-filter="${esc(name)}" aria-pressed="${name === readyFilter}">${esc(name)}</button>`).join('')}</div>` : ''}
+                ${count > 8 ? `<div class="wo-search"><span class="material-icons search" aria-hidden="true"></span>
+                    <input is="emby-input" type="search" id="woReadySearch" placeholder="Search" aria-label="Search the ready-made orders" autocomplete="off" value="${esc(search)}" /></div>` : ''}
+            </div>
+            ${groups.map((g) => `<section class="wo-rm-group" data-ready-group="${esc(g.Group)}">
+                <h4>${esc(g.Group)}</h4>
+                <ul class="wo-rm-grid">${g.Orders.map(readyMadeCard).join('')}</ul>
+            </section>`).join('')}
+            <p class="wo-muted" id="woReadyNone" hidden>No ready-made orders match that search.</p>`;
+        applyReadyFilter();
     }
 
-    function readyMadeRow(o) {
+    function readyMadeCard(o) {
         const state = READY_STATE[o.State] || READY_STATE.NotAdded;
-        const library = o.ItemCount
-            ? (o.InLibrary === 0 ? '<span class="wo-status wo-missing">None in your library</span>'
-                : o.InLibrary >= o.ItemCount ? '<span class="wo-status wo-ok">All in your library</span>'
-                : `<span class="wo-status wo-title">${o.InLibrary} of ${o.ItemCount} in your library</span>`)
+        let library = '';
+        if (o.ItemCount) {
+            const [dot, text] = o.InLibrary === 0 ? ['var(--wo-bad)', 'None in your library']
+                : o.InLibrary >= o.ItemCount ? ['var(--wo-ok)', 'All in your library']
+                : ['var(--wo-warn)', `${o.InLibrary} of ${o.ItemCount} in your library`];
+            library = `<div class="wo-rm-lib" style="--wo-dot:${dot}">${text}</div>`;
+        }
+        const update = o.State === 'UpdateAvailable' || o.State === 'EditedUpdateAvailable';
+        const version = update ? ` · version ${o.AddedVersion} → ${o.Version}` : '';
+        let tag = '';
+        if (state.text) {
+            const cls = update ? ' wo-tag-update' : o.State === 'IdTaken' ? '' : ' wo-tag-ok';
+            tag = `<span class="wo-tag${cls}">${o.State === 'Added' ? '✓ ' : ''}${esc(state.text)}</span>`;
+        }
+        const initials = initialsOf(o.Name || o.Id);
+        let hue = 0;
+        for (const c of String(o.Id)) {
+            hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        }
+        const button = state.button
+            ? `<button is="emby-button" type="button" class="raised ${update ? 'wo-rm-update' : ''}" data-ready="${esc(o.Id)}" data-state="${esc(o.State)}" data-name="${esc(o.Name)}">${o.State === 'NotAdded' ? '<span class="material-icons add" aria-hidden="true"></span>' : ''}<span>${state.button}</span></button>`
             : '';
-        const version = o.State === 'UpdateAvailable' || o.State === 'EditedUpdateAvailable'
-            ? ` · version ${o.AddedVersion} → ${o.Version}` : '';
-        return `<li data-search="">
-            <div class="wo-meta">
-                <div class="wo-name">${esc(o.Name)}${state.text ? `<span class="wo-tag${o.State.includes('Update') ? ' wo-tag-update' : ''}">${esc(state.text)}</span>` : ''}</div>
-                <div class="wo-sub">${o.EntryCount} entr${o.EntryCount === 1 ? 'y' : 'ies'} · ${library}${version}</div>
-                ${o.Description ? `<div class="wo-sub wo-desc" title="${esc(o.Description)}">${esc(o.Description)}</div>` : ''}
+        return `<li class="wo-rm-card" data-ready-card="${esc(o.Id)}" data-search="${esc(`${o.Name} ${o.Id} ${o.Description || ''}`.toLowerCase())}">
+            <div class="wo-rm-band" style="--wo-hue:${hue}" aria-hidden="true">${esc(initials)}</div>
+            <div class="wo-rm-body">
+                <div class="wo-rm-name">${esc(o.Name)}</div>
+                <div class="wo-rm-meta">${o.EntryCount} entr${o.EntryCount === 1 ? 'y' : 'ies'}${version}</div>
+                ${library}
+                ${o.Description ? `<div class="wo-rm-desc" title="${esc(o.Description)}">${esc(o.Description)}</div>` : ''}
+                <div class="wo-rm-foot">${tag}${button}</div>
             </div>
-            ${state.button ? `<button is="emby-button" type="button" class="raised ${state.cls || ''}" data-ready="${esc(o.Id)}" data-state="${esc(o.State)}" data-name="${esc(o.Name)}"><span>${state.button}</span></button>` : ''}
         </li>`;
     }
 
+    function applyReadyFilter() {
+        const words = ($('#woReadySearch')?.value || '').toLowerCase().split(/\s+/).filter(Boolean);
+        let shown = 0;
+        view.querySelectorAll('[data-ready-group]').forEach((group) => {
+            let inGroup = 0;
+            group.querySelectorAll('[data-ready-card]').forEach((card) => {
+                card.hidden = !words.every((w) => card.dataset.search.includes(w));
+                inGroup += card.hidden ? 0 : 1;
+            });
+            group.hidden = inGroup === 0 || (readyFilter !== 'All' && group.dataset.readyGroup !== readyFilter);
+            shown += group.hidden ? 0 : inGroup;
+        });
+        view.querySelectorAll('[data-ready-filter]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.readyFilter === readyFilter)));
+        const none = $('#woReadyNone');
+        if (none) {
+            none.hidden = shown > 0;
+        }
+    }
+
+    /** Brings a ready-made order into view in Add orders, e.g. from "Update to the new version" on the Orders list. */
+    function showReadyMade(id) {
+        readyFilter = 'All';
+        if ($('#woReadySearch')) {
+            $('#woReadySearch').value = '';
+        }
+        applyReadyFilter();
+        const card = view.querySelector(`[data-ready-card="${CSS.escape(id)}"]`);
+        if (card) {
+            card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            (card.querySelector('[data-ready]') || card).focus({ preventScroll: true });
+        }
+    }
+
     async function onReadyMadeClick(e) {
+        const filter = e.target.closest('[data-ready-filter]');
+        if (filter) {
+            readyFilter = filter.dataset.readyFilter;
+            applyReadyFilter();
+            return;
+        }
         const button = e.target.closest('[data-ready]');
         if (!button) {
             return;
@@ -1036,28 +1114,87 @@ export default function (view) {
 
     // --------------------------------------------------------------- settings
 
+    let savedSettings = null;
+
+    /** Reads one setting from the form: a switch, a set of choices, or a number. */
+    function readSetting(key) {
+        const el = $('#' + key);
+        if (el.getAttribute('role') === 'radiogroup') {
+            return el.querySelector('input:checked')?.value ?? null;
+        }
+        if (el.type === 'checkbox') {
+            return el.checked;
+        }
+        return el.type === 'number' ? parseInt(el.value, 10) : el.value;
+    }
+
+    function writeSetting(key, value) {
+        const el = $('#' + key);
+        if (el.getAttribute('role') === 'radiogroup') {
+            const radios = [...el.querySelectorAll('input')];
+            (radios.find((r) => r.value === value) || radios[0]).checked = true;
+        } else if (el.type === 'checkbox') {
+            el.checked = !!value;
+        } else {
+            el.value = value ?? el.value;
+        }
+    }
+
     async function loadSettings() {
         const config = await ApiClient.getPluginConfiguration(pluginId);
         for (const key of settingsFields) {
-            const el = $('#' + key);
-            if (el.type === 'checkbox') {
-                el.checked = !!config[key];
-            } else {
-                el.value = config[key] ?? el.value;
-            }
+            writeSetting(key, config[key]);
         }
+        savedSettings = Object.fromEntries(settingsFields.map((k) => [k, readSetting(k)]));
+        onSettingsInput();
+    }
+
+    /** Greys out settings that don't apply, redraws the library bar preview and shows the save bar when something changed. */
+    function onSettingsInput() {
+        const web = readSetting('ShowInWebApp');
+        const location = readSetting('ButtonLocation');
+        const toggle = (sel, on) => view.querySelectorAll(sel).forEach((el) => {
+            el.classList.toggle('wo-off', !on);
+            el.querySelectorAll('input').forEach((i) => {
+                i.disabled = !on;
+            });
+        });
+        toggle('[data-needs-web]', web);
+        toggle('[data-needs-bar]', web && location !== 'TopBarIcon');
+        toggle('[data-needs-refresh]', readSetting('AutoRefreshOnLibraryChange'));
+
+        const me = '<span class="wo-lbar-me"><span class="material-icons format_list_numbered" aria-hidden="true"></span>Watch Orders</span>';
+        const libs = ['Films', 'Shows', 'Anime'].map((n) => `<span>${n}</span>`);
+        const bar = location === 'TopBarIcon' ? [] : readSetting('LibraryBarPosition') === 'AfterFavourites'
+            ? ['<span>Home</span>', '<span>Favourites</span>', me, ...libs]
+            : ['<span>Home</span>', '<span>Favourites</span>', ...libs, me];
+        if (location !== 'LibraryBar') {
+            bar.push('<span class="wo-lbar-me wo-lbar-icon" title="Icon next to the user menu"><span class="material-icons format_list_numbered" aria-hidden="true"></span></span>');
+        }
+        $('#woBarPreview').innerHTML = bar.join('');
+
+        const changed = !!savedSettings && settingsFields.some((k) => readSetting(k) !== savedSettings[k]);
+        $('#woSettingsBar').hidden = !changed;
     }
 
     async function saveSettings(e) {
         e.preventDefault();
         Dashboard.showLoadingMsg();
-        const config = await ApiClient.getPluginConfiguration(pluginId);
-        for (const key of settingsFields) {
-            const el = $('#' + key);
-            config[key] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? parseInt(el.value, 10) : el.value;
+        try {
+            const config = await ApiClient.getPluginConfiguration(pluginId);
+            for (const key of settingsFields) {
+                const value = readSetting(key);
+                if (value !== null && !(typeof value === 'number' && Number.isNaN(value))) {
+                    config[key] = value;
+                }
+            }
+            const result = await ApiClient.updatePluginConfiguration(pluginId, config);
+            Dashboard.processPluginConfigurationUpdateResult(result);
+            savedSettings = Object.fromEntries(settingsFields.map((k) => [k, readSetting(k)]));
+            onSettingsInput();
+        } finally {
+            Dashboard.hideLoadingMsg();
         }
-        const result = await ApiClient.updatePluginConfiguration(pluginId, config);
-        Dashboard.processPluginConfigurationUpdateResult(result);
         loadWebClientStatus();
     }
 
@@ -1964,6 +2101,15 @@ export default function (view) {
         }
     });
     $('#woReadyMade').addEventListener('click', onReadyMadeClick);
+    $('#woReadyMade').addEventListener('input', (e) => {
+        if (e.target.id === 'woReadySearch') {
+            applyReadyFilter();
+        }
+    });
+    $('#woSettingsForm').addEventListener('input', onSettingsInput);
+    $('#woSettingsForm').addEventListener('change', onSettingsInput);
+    $('#woSettingsDiscard').addEventListener('click', () => loadSettings());
+    view.querySelector('[data-rematch]').addEventListener('click', refreshAll);
     $('#woFilter').addEventListener('input', applyFilter);
     wireDropZone();
     $('#woRefresh').addEventListener('click', refreshAll);
@@ -1980,6 +2126,9 @@ export default function (view) {
         const go = e.target.closest('[data-go-area]');
         if (go) {
             showArea(go.dataset.goArea);
+            if (go.dataset.readyFocus) {
+                showReadyMade(go.dataset.readyFocus);
+            }
             return;
         }
         if (!e.target.closest('.wo-menu, [data-menu]')) {
