@@ -249,7 +249,9 @@ export default function (view) {
         draft.image.title = choice?.title;
         draft.image.year = choice?.year;
         draft.image.providerIds = choice ? { ...(choice.providerIds || {}) } : {};
+        imageChanged = true;
         markChanged(false);
+        renderArtPreview();
     }
 
     /** For a saved order: whether it has an upload, and how the link's download went. */
@@ -262,11 +264,67 @@ export default function (view) {
         }
         let image = null;
         try {
-            image = (await getJson('WatchOrder/Orders')).find((o) => o.Id === editingId)?.Image || null;
+            const saved = (await getJson('WatchOrder/Orders')).find((o) => o.Id === editingId);
+            savedSummary = saved || null;
+            image = saved?.Image || null;
         } catch {
             // Not essential.
         }
         showImageStatus(image);
+        renderArtPreview();
+    }
+
+    let savedSummary = null;  // the order list's entry for the order being edited: its artwork as saved
+    let imageChanged = false;
+
+    /**
+     * The artwork as viewers see it: the saved order's picture or backdrop, else its first item's backdrop.
+     * Changes to the image fields show once the order is saved, which the caption says.
+     */
+    function renderArtPreview() {
+        const box = $('#woArtPreview');
+        if (!box || !draft) {
+            return;
+        }
+        const o = editingId ? savedSummary : null;
+        const sources = [];
+        let caption;
+        if (o?.Artwork?.PictureVersion) {
+            sources.push(apiUrl(`WatchOrder/Orders/${encodeURIComponent(o.Id)}/Image`, { v: o.Artwork.PictureVersion }));
+            caption = o.Image?.Uploaded ? 'Uploaded picture' : 'Picture from the link';
+        } else if (o?.Artwork?.ItemId) {
+            sources.push(imageUrl(o.Artwork.ItemId, 'Backdrop'));
+            caption = 'Backdrop from your library';
+        } else if (o?.FirstItemId) {
+            sources.push(imageUrl(o.FirstItemId, 'Backdrop'), imageUrl(o.FirstItemId, 'Primary'));
+            caption = 'The first item\'s backdrop';
+        } else {
+            caption = editingId ? 'No artwork yet' : 'Shows once the order is saved';
+        }
+        if (imageChanged && editingId) {
+            caption += ' · your changes show after saving';
+        }
+        let hue = 0;
+        for (const c of String(draft.id || draft.name || '')) {
+            hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        }
+        box.style.setProperty('--wo-hue', hue);
+        const first = sources.shift();
+        box.innerHTML = `<span class="wo-art-initials" aria-hidden="true">${esc(initialsOf(draft.name || draft.id || '?'))}</span>
+            ${first ? `<img alt="" src="${esc(first)}" data-fallbacks="${esc(JSON.stringify(sources))}">` : ''}
+            <span class="wo-art-caption">${esc(caption)}</span>`;
+        const img = box.querySelector('img');
+        if (img) {
+            wireThumb(img);
+        }
+    }
+
+    function updateEditorState() {
+        const state = $('#woEdState');
+        if (state && draft) {
+            state.textContent = dirty ? 'Unsaved changes to this order.' : editingId ? 'No changes yet.' : 'A new order: give it a name and add some entries.';
+            state.closest('.wo-savebar').classList.toggle('wo-dirty', dirty);
+        }
     }
 
     function showImageStatus(image) {
@@ -866,12 +924,7 @@ export default function (view) {
 
         if (exportId) {
             const def = await getJson(`WatchOrder/Orders/${encodeURIComponent(exportId)}/Definition`);
-            const json = JSON.stringify(toPayload(toDraft(def)), null, 2) + '\n';
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-            link.download = `${exportId}.json`;
-            link.click();
-            setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+            downloadJson(toPayload(toDraft(def)), `${exportId}.json`);
         }
 
         const deleteName = ordersCache.find((o) => o.Id === deleteId)?.Name || deleteId;
@@ -879,6 +932,15 @@ export default function (view) {
             await ApiClient.ajax({ type: 'DELETE', url: apiUrl(`WatchOrder/Orders/${encodeURIComponent(deleteId)}`) });
             await loadOrders();
         }
+    }
+
+    function downloadJson(payload, name) {
+        const json = JSON.stringify(payload, null, 2) + '\n';
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+        link.download = name;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
     }
 
     async function importOrder() {
@@ -1214,7 +1276,12 @@ export default function (view) {
         dirty = false;
         statusByUid = new Map();
 
-        $('#woBuilderTitle').textContent = def ? `Edit "${draft.name}"` : 'New order';
+        $('#woBuilderTitle').textContent = def ? draft.name || draft.id : 'New order';
+        const saved = def ? ordersCache.find((o) => o.Id === draft.id) : null;
+        $('#woBuilderTags').innerHTML = saved ? originTags(saved) : '';
+        imageChanged = false;
+        savedSummary = null;
+        $('#woEntryFind').value = '';
         $('#woName').value = draft.name;
         $('#woId').value = draft.id;
         $('#woId').readOnly = !!def;
@@ -1238,6 +1305,8 @@ export default function (view) {
         renderEntries();
         $('#woEntriesScroll').scrollTop = 0;
         schedulePreview(0);
+        updateEditorState();
+        renderArtPreview();
         showView(true);
     }
 
@@ -1252,6 +1321,7 @@ export default function (view) {
 
     function markChanged(needsPreview) {
         dirty = true;
+        updateEditorState();
         if (needsPreview) {
             schedulePreview();
         }
@@ -1330,6 +1400,27 @@ export default function (view) {
         updateSummary();
         renderImageChoices();
         renderSectionsBar();
+        $('#woFindBox').hidden = count < 10 && !$('#woEntryFind').value;
+        applyEntryFind();
+    }
+
+    /** "Find in this order": shows only the entries that match, and hides section headings while it does. */
+    function applyEntryFind() {
+        const words = ($('#woEntryFind').value || '').toLowerCase().split(/\s+/).filter(Boolean);
+        const list = $('#woEntries');
+        const finding = words.length > 0;
+        list.classList.toggle('wo-finding', finding);
+        let shown = 0;
+        list.querySelectorAll('.wo-entry').forEach((row) => {
+            const e = draft.entries[Number(row.dataset.index)];
+            const text = `${entryLabel(e)} ${e.note || ''} ${e.section || ''}`.toLowerCase();
+            row.hidden = finding && !words.every((w) => text.includes(w));
+            shown += row.hidden ? 0 : 1;
+        });
+        list.querySelectorAll('.wo-section-row').forEach((row) => {
+            row.hidden = finding;
+        });
+        $('#woFindNone').hidden = !finding || shown > 0;
     }
 
     // ------------------------------------------------------- sections
@@ -1540,7 +1631,7 @@ export default function (view) {
     // so text in the note field can still be selected normally.
     function onPointerDown(e) {
         const handle = e.target.closest('.wo-handle');
-        if (handle) {
+        if (handle && !$('#woEntries').classList.contains('wo-finding')) {
             handle.closest('.wo-entry').draggable = true;
         }
     }
@@ -2139,6 +2230,11 @@ export default function (view) {
 
     $('#woBack').addEventListener('click', closeBuilder);
     $('#woCancel').addEventListener('click', closeBuilder);
+    $('#woEntryFind').addEventListener('input', applyEntryFind);
+    $('#woEdExport').addEventListener('click', () => {
+        readHeaderFields();
+        downloadJson(toPayload(draft), `${draft.id || slugify(draft.name) || 'watch-order'}.json`);
+    });
     $('#woSave').addEventListener('click', saveOrder);
     $('#woName').addEventListener('input', onNameInput);
     $('#woId').addEventListener('input', () => {
@@ -2165,7 +2261,11 @@ export default function (view) {
             showSectionInList(Number(chip.dataset.sectionGo), true);
         }
     });
-    $('#woImageUrl').addEventListener('input', () => markChanged(false));
+    $('#woImageUrl').addEventListener('input', () => {
+        imageChanged = true;
+        markChanged(false);
+        renderArtPreview();
+    });
     $('#woImageUploadButton').addEventListener('click', () => $('#woImageFile').click());
     $('#woImageFile').addEventListener('change', () => uploadImage($('#woImageFile').files[0]));
     $('#woImageRemove').addEventListener('click', () => imageAction('DELETE', 'Image'));
