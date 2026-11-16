@@ -69,6 +69,7 @@ public class WatchOrderController : ControllerBase
         {
             var origin = _origins.Get(d.Id);
             var bundled = origin is { Kind: "ReadyMade" } ? _readyMade.Get(d.Id) : null;
+            var resolved = _service.Get(d.Id);
             return new
             {
                 d.Id,
@@ -78,7 +79,13 @@ public class WatchOrderController : ControllerBase
                 Version = d.Version ?? 1,
                 d.Source,
                 EntryCount = d.Entries.Count,
-                MissingCount = _service.Get(d.Id)?.MissingCount,
+                MissingCount = resolved?.MissingCount,
+
+                // For the dashboard's list: how much of the order is in the library, its named sections and its picture.
+                StepCount = resolved?.Steps.Count,
+                SectionCount = resolved is { SectionsAutomatic: false } ? resolved.Sections.Count(s => s.Name is not null) : 0,
+                Artwork = resolved is null ? null : ArtworkFor(resolved),
+                FirstItemId = resolved?.Steps.FirstOrDefault(s => s.ItemId is not null)?.ItemId,
                 Image = ImageStatusFor(d),
                 Origin = origin?.Kind,
                 OriginUrl = origin?.Url,

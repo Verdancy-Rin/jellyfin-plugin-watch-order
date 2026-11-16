@@ -371,37 +371,130 @@ export default function (view) {
 
     // ------------------------------------------------------------- order list
 
+    let ordersCache = [];
+    let webClient = { enabled: false, installed: false };
+
     async function loadOrders() {
         const orders = await getJson('WatchOrder/Orders');
+        ordersCache = orders;
         knownIds = orders.map((o) => o.Id);
+        closeMenus();
         const list = $('#woOrders');
-        list.innerHTML = '';
+        list.innerHTML = orders.map(orderRow).join('');
         $('#woEmpty').hidden = orders.length > 0;
+        $('#woOrdersBox').hidden = orders.length === 0;
+        $('#woTiles').hidden = orders.length === 0;
+        $('#woRefresh').hidden = orders.length === 0;
         $('#woOrderCount').textContent = orders.length ? `(${orders.length})` : '';
         // A filter box once the list gets long.
-        $('#woFilterBox').hidden = orders.length < 8;
-
-        for (const o of orders) {
-            const li = document.createElement('li');
-            li.dataset.search = `${o.Name} ${o.Id} ${o.Description || ''}`.toLowerCase();
-            const missing = o.MissingCount
-                ? `<span class="wo-status wo-missing">${o.MissingCount} missing from library</span>`
-                : '<span class="wo-status wo-ok">All in library</span>';
-            li.innerHTML = `
-                <div class="wo-meta">
-                    <div class="wo-name">${esc(o.Name)}${originTags(o)}</div>
-                    <div class="wo-sub">${o.EntryCount} entr${o.EntryCount === 1 ? 'y' : 'ies'} · ${missing}<span class="wo-stats-summary" data-summary="${esc(o.Id)}"></span></div>
-                </div>
-                <button is="emby-button" type="button" class="raised button-alt" data-viewers="${esc(o.Id)}" aria-expanded="false" hidden><span>Viewers</span></button>
-                <button is="emby-button" type="button" class="raised button-submit" data-edit="${esc(o.Id)}"><span>Edit</span></button>
-                <button is="emby-button" type="button" class="raised button-alt" data-export="${esc(o.Id)}"><span>Export</span></button>
-                <button is="emby-button" type="button" class="raised button-delete" data-delete="${esc(o.Id)}"><span>Delete</span></button>
-                <div class="wo-stats" data-stats="${esc(o.Id)}" hidden></div>`;
-            list.appendChild(li);
-        }
+        $('#woFilterBox').hidden = orders.length < 6;
+        list.querySelectorAll('img[data-fallbacks]').forEach(wireThumb);
+        updateTotals();
         applyFilter();
         loadStats();
         loadReadyMade(); // states change as orders are added, edited and deleted
+    }
+
+    /** One row of the orders list: artwork, name and tags, how much is in the library, viewers, and actions. */
+    function orderRow(o) {
+        const id = esc(o.Id);
+        const steps = o.StepCount ?? null;
+        const missing = o.MissingCount ?? 0;
+        let library;
+        if (steps === null) {
+            library = '<div class="wo-lib-text wo-muted">Not matched yet</div>';
+        } else if (!steps) {
+            library = '<div class="wo-lib-text wo-muted">Nothing to match</div>';
+        } else {
+            const have = steps - missing;
+            const text = missing
+                ? `${have} of ${steps} <span class="wo-bad-text">· ${missing} missing</span>`
+                : `All ${steps} in library`;
+            library = `<div class="wo-lib-text${missing ? '' : ' wo-all'}">${text}</div>
+                <div class="wo-lib-bar" role="progressbar" aria-label="In your library" aria-valuemin="0" aria-valuemax="${steps}" aria-valuenow="${have}"><div style="width:${Math.round(100 * have / steps)}%"></div></div>`;
+        }
+        const parts = [`${o.EntryCount} entr${o.EntryCount === 1 ? 'y' : 'ies'}`];
+        if (o.SectionCount) {
+            parts.push(`${o.SectionCount} section${o.SectionCount === 1 ? '' : 's'}`);
+        }
+        return `<li class="wo-order" data-order="${id}" data-search="${esc(`${o.Name} ${o.Id} ${o.Description || ''}`.toLowerCase())}">
+            <div class="wo-order-main">
+                ${thumbHtml(o)}
+                <div style="min-width:0">
+                    <div class="wo-order-title">${esc(o.Name)} ${originTags(o)}</div>
+                    <div class="wo-order-sub">${parts.join(' · ')}<span class="wo-order-id"> · <code>${id}</code></span></div>
+                </div>
+            </div>
+            <div class="wo-order-lib" title="Films and episodes">${library}</div>
+            <div class="wo-order-viewers" data-summary="${id}"><span class="wo-muted">…</span></div>
+            <div class="wo-order-actions">
+                <button is="emby-button" type="button" class="raised" data-edit="${id}"><span>Edit</span></button>
+                <button type="button" class="wo-icon-round" data-menu="${id}" aria-haspopup="menu" aria-expanded="false" aria-label="More actions for ${esc(o.Name)}"><span class="material-icons more_vert" aria-hidden="true"></span></button>
+            </div>
+            <div class="wo-stats" data-stats="${id}" hidden></div>
+        </li>`;
+    }
+
+    /** The order's artwork: its own picture, else the backdrop of the item it names, else its first item's; initials when none load. */
+    function thumbHtml(o) {
+        const sources = [];
+        if (o.Artwork?.PictureVersion) {
+            sources.push(apiUrl(`WatchOrder/Orders/${encodeURIComponent(o.Id)}/Image`, { v: o.Artwork.PictureVersion }));
+        }
+        if (o.Artwork?.ItemId) {
+            sources.push(imageUrl(o.Artwork.ItemId, 'Backdrop'));
+        }
+        if (o.FirstItemId) {
+            sources.push(imageUrl(o.FirstItemId, 'Backdrop'), imageUrl(o.FirstItemId, 'Primary'));
+        }
+        const words = String(o.Name || o.Id).split(/[\s:]+/).filter((w) => /^[\p{L}\p{N}]/u.test(w));
+        const initials = (words.length > 1 ? words.slice(0, 3).map((w) => w[0]) : [...(words[0] || '?').slice(0, 2)]).join('').toUpperCase();
+        let hue = 0;
+        for (const c of String(o.Id)) {
+            hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        }
+        const first = sources.shift();
+        return `<div class="wo-thumb" style="--wo-hue:${hue}" aria-hidden="true">
+            <span class="wo-thumb-text">${esc(initials)}</span>
+            ${first ? `<img alt="" loading="lazy" src="${esc(first)}" data-fallbacks="${esc(JSON.stringify(sources))}">` : ''}
+        </div>`;
+    }
+
+    function imageUrl(itemId, type) {
+        return ApiClient.getScaledImageUrl(itemId, { type, maxWidth: 240, quality: 80 });
+    }
+
+    /** Tries the next picture when one fails to load, and leaves the initials showing when none do. */
+    function wireThumb(img) {
+        img.addEventListener('error', () => {
+            const rest = JSON.parse(img.dataset.fallbacks || '[]');
+            const next = rest.shift();
+            if (next) {
+                img.dataset.fallbacks = JSON.stringify(rest);
+                img.src = next;
+            } else {
+                img.remove();
+            }
+        });
+    }
+
+    /** The summary tiles, and the counts beside the menu. */
+    function updateTotals(stats) {
+        const orders = ordersCache;
+        const missing = orders.reduce((n, o) => n + (o.MissingCount || 0), 0);
+        const updates = orders.filter((o) => o.UpdateAvailable).length;
+        $('#woTileOrders').textContent = orders.length;
+        $('#woTileMissing').textContent = missing;
+        $('#woTileMissing').parentElement.classList.toggle('wo-has-bad', missing > 0);
+        $('#woTileUpdates').textContent = updates;
+        $('#woTileUpdates').parentElement.classList.toggle('wo-has-warn', updates > 0);
+        $('#woNavOrders').textContent = orders.length || '';
+        $('#woNavUpdates').textContent = updates || '';
+        $('#woNavUpdates').title = updates ? `${updates} update${updates === 1 ? '' : 's'} available` : '';
+        if (stats) {
+            const watching = new Set(stats.flatMap((s) => s.Users.filter((u) => u.Status === 'InProgress' || u.Status === 'Stalled').map((u) => u.UserName)));
+            $('#woTileWatching').textContent = watching.size;
+        }
     }
 
     // ------------------------------------------------------------ order stats
@@ -414,21 +507,29 @@ export default function (view) {
         try {
             stats = await getJson('WatchOrder/Stats');
         } catch {
+            view.querySelectorAll('[data-summary]').forEach((cell) => {
+                cell.textContent = '';
+            });
             return;
         }
         statsById = new Map(stats.map((s) => [s.OrderId, s]));
-        for (const s of stats) {
-            const summary = view.querySelector(`[data-summary="${CSS.escape(s.OrderId)}"]`);
-            const button = view.querySelector(`[data-viewers="${CSS.escape(s.OrderId)}"]`);
-            if (!summary || !button) {
+        updateTotals(stats);
+        for (const cell of view.querySelectorAll('[data-summary]')) {
+            const s = statsById.get(cell.dataset.summary);
+            if (!s || !s.Users.length) {
+                cell.innerHTML = '<span class="wo-muted">No one has started it</span>';
                 continue;
             }
-            summary.textContent = s.Users.length ? ' · ' + statsSummary(s) : ' · No one has started it';
-            button.hidden = s.Users.length === 0;
-            button.querySelector('span').textContent = `Viewers (${s.Users.length})`;
             const panel = view.querySelector(`[data-stats="${CSS.escape(s.OrderId)}"]`);
-            if (panel && !panel.hidden) {
-                panel.innerHTML = statsTable(s);
+            const open = panel && !panel.hidden;
+            cell.innerHTML = `<button type="button" class="wo-viewers-btn" data-viewers="${esc(s.OrderId)}" aria-expanded="${open}"
+                aria-controls="woStats-${esc(s.OrderId)}" title="Show who's watching">
+                <span class="material-icons group" aria-hidden="true"></span><span>${esc(statsSummary(s))}</span><span class="material-icons expand_more" aria-hidden="true"></span></button>`;
+            if (panel) {
+                panel.id = `woStats-${s.OrderId}`;
+                if (open) {
+                    panel.innerHTML = statsTable(s);
+                }
             }
         }
     }
@@ -503,12 +604,66 @@ export default function (view) {
         button.setAttribute('aria-expanded', String(open));
     }
 
+    // ------------------------------------------------------- per-order menu
+
+    function closeMenus(focusButton) {
+        view.querySelectorAll('.wo-menu').forEach((menu) => menu.remove());
+        view.querySelectorAll('[data-menu][aria-expanded="true"]').forEach((button) => {
+            button.setAttribute('aria-expanded', 'false');
+            if (focusButton) {
+                button.focus();
+            }
+        });
+    }
+
+    function openMenu(button) {
+        const wasOpen = button.getAttribute('aria-expanded') === 'true';
+        closeMenus();
+        if (wasOpen) {
+            return;
+        }
+        const id = button.dataset.menu;
+        const menu = document.createElement('div');
+        menu.className = 'wo-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', button.getAttribute('aria-label'));
+        const webApp = webClient.enabled && webClient.installed
+            ? `<button type="button" role="menuitem" data-open-page="${esc(id)}"><span class="material-icons open_in_new" aria-hidden="true"></span><span>Open in the web app</span></button>` : '';
+        const update = ordersCache.find((o) => o.Id === id)?.UpdateAvailable
+            ? '<button type="button" role="menuitem" data-go-area="add"><span class="material-icons system_update_alt" aria-hidden="true"></span><span>Update to the new version</span></button>' : '';
+        menu.innerHTML = `${update}${webApp}
+            <button type="button" role="menuitem" data-export="${esc(id)}"><span class="material-icons download" aria-hidden="true"></span><span>Export file</span></button>
+            <hr>
+            <button type="button" role="menuitem" class="wo-danger" data-delete="${esc(id)}"><span class="material-icons delete_outline" aria-hidden="true"></span><span>Delete order</span></button>`;
+        button.after(menu);
+        button.setAttribute('aria-expanded', 'true');
+        menu.querySelector('button').focus();
+    }
+
+    function onMenuKeydown(e) {
+        const menu = e.target.closest('.wo-menu');
+        if (!menu) {
+            return;
+        }
+        const items = [...menu.querySelectorAll('[role="menuitem"]')];
+        const index = items.indexOf(document.activeElement);
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeMenus(true);
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            items[(index + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+        } else if (e.key === 'Tab') {
+            closeMenus();
+        }
+    }
+
     function originTags(o) {
         const tags = [];
         if (o.Origin === 'ReadyMade') {
             tags.push('<span class="wo-tag">Ready-made</span>');
         } else if (o.Origin === 'Link') {
-            tags.push(`<span class="wo-tag" title="${esc(o.OriginUrl || '')}">From a link</span>`);
+            tags.push(`<span class="wo-tag wo-tag-link" title="${esc(o.OriginUrl || '')}">From a link</span>`);
         }
         if (o.Edited) {
             tags.push('<span class="wo-tag">Edited</span>');
@@ -540,7 +695,7 @@ export default function (view) {
             return;
         }
         box.innerHTML = groups.map((g) => `
-            <h3>${esc(g.Group)}</h3>
+            <h4>${esc(g.Group)}</h4>
             <ul class="wo-list">${g.Orders.map(readyMadeRow).join('')}</ul>`).join('');
     }
 
@@ -599,12 +754,26 @@ export default function (view) {
     }
 
     async function onOrderListClick(e) {
+        const menuButton = e.target.closest('[data-menu]');
+        if (menuButton) {
+            openMenu(menuButton);
+            return;
+        }
         const editId = e.target.closest('[data-edit]')?.dataset.edit;
         const exportId = e.target.closest('[data-export]')?.dataset.export;
         const deleteId = e.target.closest('[data-delete]')?.dataset.delete;
+        const pageId = e.target.closest('[data-open-page]')?.dataset.openPage;
         const viewers = e.target.closest('[data-viewers]');
+        if (e.target.closest('.wo-menu')) {
+            closeMenus(true);
+        }
         if (viewers) {
             toggleViewers(viewers);
+            return;
+        }
+
+        if (pageId) {
+            window.open(`${location.pathname}${location.search}#/watchorders?order=${encodeURIComponent(pageId)}`, '_blank', 'noopener');
             return;
         }
 
@@ -627,7 +796,8 @@ export default function (view) {
             setTimeout(() => URL.revokeObjectURL(link.href), 1000);
         }
 
-        if (deleteId && confirm(`Delete the order "${deleteId}"? This can't be undone.`)) {
+        const deleteName = ordersCache.find((o) => o.Id === deleteId)?.Name || deleteId;
+        if (deleteId && confirm(`Delete "${deleteName}"? This can't be undone.`)) {
             await ApiClient.ajax({ type: 'DELETE', url: apiUrl(`WatchOrder/Orders/${encodeURIComponent(deleteId)}`) });
             await loadOrders();
         }
@@ -744,28 +914,60 @@ export default function (view) {
         });
     }
 
-    /** Sections remember whether they were left open or closed, in this browser. */
-    function rememberSections() {
-        const key = 'watchorder-admin-sections';
-        let saved = {};
-        try {
-            saved = JSON.parse(localStorage.getItem(key) || '{}') || {};
-        } catch {
-            saved = {};
-        }
-        for (const section of view.querySelectorAll('details[data-section]')) {
-            const name = section.dataset.section;
-            if (typeof saved[name] === 'boolean') {
-                section.open = saved[name];
+    // ------------------------------------------------------------------ areas
+
+    const AREA_KEY = 'watchorder-admin-area';
+
+    /** Shows one area (Orders, Add orders or Settings), closing the order editor first if it's open. */
+    function showArea(name, remember = true) {
+        if (draft) {
+            if (dirty && !confirm('Discard your unsaved changes to this order?')) {
+                return;
             }
-            section.addEventListener('toggle', () => {
-                saved[name] = section.open;
-                try {
-                    localStorage.setItem(key, JSON.stringify(saved));
-                } catch {
-                    // Storage unavailable: sections just won't be remembered.
-                }
-            });
+            draft = null;
+            showView(false);
+            loadOrders();
+        }
+        const panels = [...view.querySelectorAll('[data-area-panel]')];
+        if (!panels.some((p) => p.dataset.areaPanel === name)) {
+            name = 'orders';
+        }
+        panels.forEach((p) => {
+            p.hidden = p.dataset.areaPanel !== name;
+        });
+        view.querySelectorAll('.wo-nav [data-area]').forEach((b) => {
+            if (b.dataset.area === name) {
+                b.setAttribute('aria-current', 'page');
+            } else {
+                b.removeAttribute('aria-current');
+            }
+        });
+        closeMenus();
+        if (remember) {
+            try {
+                localStorage.setItem(AREA_KEY, name);
+            } catch {
+                // Storage unavailable: the page just opens on Orders.
+            }
+        }
+    }
+
+    function savedArea() {
+        try {
+            return localStorage.getItem(AREA_KEY) || 'orders';
+        } catch {
+            return 'orders';
+        }
+    }
+
+    /** The plugin's version, beside the title. */
+    async function loadVersion() {
+        try {
+            const plugins = await ApiClient.getInstalledPlugins();
+            const me = plugins.find((p) => String(p.Id).replace(/-/g, '').toLowerCase() === pluginId.replace(/-/g, ''));
+            $('#woPluginVersion').textContent = me?.Version ? `v${me.Version}` : '';
+        } catch {
+            $('#woPluginVersion').textContent = '';
         }
     }
 
@@ -781,20 +983,54 @@ export default function (view) {
 
     // ------------------------------------------------------- web app status
 
+    const FT_REPO = 'https://www.iamparadox.dev/jellyfin/plugins/manifest.json';
+
     async function loadWebClientStatus() {
         const notice = $('#woWebClientNotice');
+        const chip = $('#woWebClientChip');
         try {
             const status = await getJson('WatchOrder/WebClientStatus');
-            if (status.Enabled && !status.FileTransformationInstalled) {
-                notice.innerHTML = 'To show the <strong>Watch orders</strong> page to your users in the web app, install the '
-                    + '<strong>File Transformation</strong> plugin, then restart Jellyfin. '
-                    + 'Add the repository <code>https://www.iamparadox.dev/jellyfin/plugins/manifest.json</code> under Plugins → Repositories to find it.';
-                notice.hidden = false;
-            } else {
-                notice.hidden = true;
-            }
+            webClient = { enabled: !!status.Enabled, installed: !!status.FileTransformationInstalled };
         } catch {
+            webClient = { enabled: false, installed: false };
             notice.hidden = true;
+            chip.hidden = true;
+            return;
+        }
+        chip.hidden = !(webClient.enabled && webClient.installed);
+        chip.className = 'wo-pill wo-ok';
+        chip.textContent = 'File Transformation installed';
+        if (webClient.enabled && !webClient.installed) {
+            notice.innerHTML = `<span class="material-icons warning_amber" aria-hidden="true"></span>
+                <div>
+                    <strong>File Transformation isn't installed</strong>
+                    <p>Users won't see the Watch Orders page, the home screen row or the section on item pages until it is. Orders still work through
+                    playlists, autoplay and the API. Add the repository <code>${FT_REPO}</code> under Plugins → Repositories, install
+                    <strong>File Transformation</strong>, then restart Jellyfin.</p>
+                    <div class="wo-notice-actions">
+                        <button is="emby-button" type="button" class="raised" data-copy-repo><span class="material-icons content_copy" aria-hidden="true"></span><span>Copy repository link</span></button>
+                        <button is="emby-button" type="button" class="raised button-flat" data-recheck><span>Check again</span></button>
+                    </div>
+                </div>`;
+            notice.hidden = false;
+        } else {
+            notice.hidden = true;
+        }
+    }
+
+    async function onNoticeClick(e) {
+        if (e.target.closest('[data-recheck]')) {
+            await loadWebClientStatus();
+            return;
+        }
+        const copy = e.target.closest('[data-copy-repo]');
+        if (copy) {
+            try {
+                await navigator.clipboard.writeText(FT_REPO);
+                copy.querySelector('span:last-child').textContent = 'Copied';
+            } catch {
+                window.prompt('Copy the repository link:', FT_REPO);
+            }
         }
     }
 
@@ -830,6 +1066,7 @@ export default function (view) {
     function showView(builder) {
         $('#woListView').hidden = builder;
         $('#woBuilderView').hidden = !builder;
+        closeMenus();
         window.scrollTo(0, 0);
     }
 
@@ -1729,10 +1966,27 @@ export default function (view) {
     $('#woReadyMade').addEventListener('click', onReadyMadeClick);
     $('#woFilter').addEventListener('input', applyFilter);
     wireDropZone();
-    rememberSections();
     $('#woRefresh').addEventListener('click', refreshAll);
     $('#woOrders').addEventListener('click', onOrderListClick);
+    $('#woOrders').addEventListener('keydown', onMenuKeydown);
     $('#woNew').addEventListener('click', () => openBuilder(null));
+    $('#woWebClientNotice').addEventListener('click', onNoticeClick);
+    view.querySelectorAll('.wo-nav [data-area]').forEach((b) => b.addEventListener('click', () => showArea(b.dataset.area)));
+    view.addEventListener('click', (e) => {
+        if (e.target.closest('[data-new-order]')) {
+            openBuilder(null);
+            return;
+        }
+        const go = e.target.closest('[data-go-area]');
+        if (go) {
+            showArea(go.dataset.goArea);
+            return;
+        }
+        if (!e.target.closest('.wo-menu, [data-menu]')) {
+            closeMenus();
+        }
+    });
+    showArea(savedArea(), false);
 
     $('#woBack').addEventListener('click', closeBuilder);
     $('#woCancel').addEventListener('click', closeBuilder);
@@ -1793,7 +2047,7 @@ export default function (view) {
         showView(false);
         Dashboard.showLoadingMsg();
         try {
-            await Promise.all([loadOrders(), loadSettings(), loadWebClientStatus()]);
+            await Promise.all([loadOrders(), loadSettings(), loadWebClientStatus(), loadVersion()]);
         } finally {
             Dashboard.hideLoadingMsg();
         }

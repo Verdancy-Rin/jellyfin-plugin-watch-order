@@ -11,51 +11,189 @@
          data-require="emby-input,emby-button,emby-checkbox,emby-select,emby-textarea"
          data-controller="__plugin/WatchOrderConfigJs">
         <style>
-            #WatchOrderConfigPage { --wo-border: rgba(128,128,128,.28); --wo-soft: rgba(128,128,128,.12); --wo-ok: #3fb950; --wo-warn: #e3a008; --wo-bad: #f0645a; }
+            #WatchOrderConfigPage { --wo-accent: var(--jf-palette-primary-main, #00a4dc); --wo-border: var(--jf-palette-divider, rgba(128,128,128,.28));
+              --wo-soft: rgba(128,128,128,.12); --wo-panel: rgba(128,128,128,.06); --wo-text2: var(--jf-palette-text-secondary, rgba(128,128,128,1));
+              --wo-ok: #3fb950; --wo-warn: #e3a008; --wo-bad: #f0645a;
+              /* Text in those colours, pulled towards the theme's text colour so it stays readable on light and dark themes. */
+              --wo-ok-text: color-mix(in srgb, var(--wo-ok) 72%, var(--jf-palette-text-primary, currentColor));
+              --wo-warn-text: color-mix(in srgb, var(--wo-warn) 72%, var(--jf-palette-text-primary, currentColor));
+              --wo-bad-text: color-mix(in srgb, var(--wo-bad) 80%, var(--jf-palette-text-primary, currentColor)); }
             #WatchOrderConfigPage [hidden] { display: none !important; }
-            .wo-header { display: flex; align-items: center; justify-content: space-between; gap: 1em; flex-wrap: wrap; }
-            .wo-header h2 { margin: .4em 0; }
-            .wo-muted { opacity: .7; }
+            .wo-muted { color: var(--wo-text2); }
+            .wo-app { container-type: inline-size; }
+            .wo-main { container-type: inline-size; min-width: 0; }
+            .wo-app .emby-button, .wo-app [is="emby-button"] { margin: 0; }
+            .wo-app .material-icons { font-size: 1.25em; }
+            .wo-app button .material-icons + span { margin-left: .4em; }
+
+            /* Header */
+            .wo-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1em 1.5em; padding: .25em 0 1.25em; margin-bottom: 1.5em; border-bottom: 1px solid var(--wo-border); }
+            .wo-brand { display: flex; gap: 1em; align-items: center; min-width: 0; flex: 1 1 24em; }
+            .wo-logo { width: 2.9em; height: 2.9em; border-radius: .75em; flex: none; display: grid; place-items: center;
+              background: var(--wo-accent); color: var(--jf-palette-primary-contrastText, #fff); }
+            .wo-logo .material-icons { font-size: 1.6em; }
+            .wo-brand h2 { margin: 0; }
+            .wo-version { font-size: .55em; font-weight: normal; color: var(--wo-text2); margin-left: .7em; font-variant-numeric: tabular-nums; vertical-align: .2em; }
+            .wo-tagline { margin: .2em 0 0; color: var(--wo-text2); }
+            .wo-top-side { display: flex; flex-wrap: wrap; align-items: center; gap: .5em 1em; }
+            .wo-help { display: inline-flex; align-items: center; gap: .35em; }
+            .wo-pill { display: inline-flex; align-items: center; gap: .45em; padding: .15em .7em; border-radius: 999px; font-size: .85em; border: 1px solid var(--wo-border); background: var(--wo-soft); white-space: nowrap; }
+            .wo-pill::before { content: ""; width: .5em; height: .5em; border-radius: 50%; background: currentColor; opacity: .7; }
+            .wo-pill.wo-ok { color: var(--wo-ok-text); border-color: color-mix(in srgb, var(--wo-ok) 40%, transparent); background: color-mix(in srgb, var(--wo-ok) 10%, transparent); }
+            .wo-notice { display: flex; gap: .9em; align-items: flex-start; border: 1px solid color-mix(in srgb, var(--wo-warn) 55%, transparent); background: color-mix(in srgb, var(--wo-warn) 9%, transparent);
+              border-radius: .75em; padding: 1em 1.25em; margin: 0 0 1.5em; }
+            .wo-notice > .material-icons { color: var(--wo-warn); font-size: 1.5em; flex: none; }
+            .wo-notice p { margin: .2em 0 0; }
+            .wo-notice code { overflow-wrap: anywhere; }
+            .wo-notice a { color: inherit; }
+            .wo-notice-actions { display: flex; flex-wrap: wrap; gap: .5em; margin-top: .75em; }
+
+            /* Side menu, which becomes a row of tabs when there's no room */
+            .wo-shell { display: grid; grid-template-columns: 13.5em minmax(0, 1fr); gap: 2.25em; align-items: start; }
+            .wo-nav { display: flex; flex-direction: column; gap: .2em; position: sticky; top: 1em; }
+            .wo-nav button, .wo-nav-link { display: flex; align-items: center; gap: .8em; width: 100%; min-height: 2.9em; padding: 0 .9em; box-sizing: border-box;
+              border: 0; border-radius: .5em; background: none; color: inherit; font: inherit; font-weight: 500; text-align: left; cursor: pointer; text-decoration: none; }
+            .wo-nav button:hover, .wo-nav-link:hover { background: var(--wo-soft); }
+            .wo-nav button:focus-visible, .wo-nav-link:focus-visible { outline: 2px solid var(--wo-accent); outline-offset: -2px; }
+            .wo-nav button[aria-current="page"] { background: color-mix(in srgb, var(--wo-accent) 18%, transparent); }
+            .wo-nav button[aria-current="page"] .material-icons { color: var(--wo-accent); }
+            .wo-nav .material-icons { opacity: .9; }
+            .wo-nav-count { margin-left: auto; font-size: .8em; font-weight: normal; color: var(--wo-text2); }
+            .wo-nav-count.wo-warn { color: var(--wo-warn-text); font-weight: 600; min-width: 1.6em; text-align: center; padding: .05em .45em; border-radius: 1em; background: color-mix(in srgb, var(--wo-warn) 15%, transparent); }
+            .wo-nav-count:empty { display: none; }
+            .wo-nav-sep { height: 1px; background: var(--wo-border); margin: .75em .3em; }
+            .wo-nav-link { font-weight: normal; font-size: .9em; color: var(--wo-text2); }
+            @container (max-width: 52em) {
+              .wo-shell { grid-template-columns: minmax(0, 1fr); gap: 1.25em; }
+              .wo-nav { flex-direction: row; position: static; overflow-x: auto; padding-bottom: .5em; border-bottom: 1px solid var(--wo-border); }
+              .wo-nav button { width: auto; flex: none; white-space: nowrap; }
+              .wo-nav-sep, .wo-nav-link { display: none; }
+            }
+
+            /* Shared pieces */
+            .wo-panel { background: var(--wo-panel); border: 1px solid var(--wo-border); border-radius: .75em; padding: 1.25em 1.5em; margin: 0 0 1.25em; }
+            .wo-panel h3, .wo-area-title { margin: .15em 0 .2em; font-size: 1.25em; font-weight: 600; }
+            .wo-panel > p { margin: 0 0 1em; }
+            .wo-eyebrow { font-size: .72em; letter-spacing: .12em; text-transform: uppercase; color: var(--wo-text2); }
+            .wo-tag { display: inline-block; font-size: .78em; font-weight: 500; padding: .05em .6em; border-radius: 1em; border: 1px solid var(--wo-border); background: var(--wo-soft); white-space: nowrap; vertical-align: .1em; }
+            .wo-tag-update { color: var(--wo-warn-text); border-color: color-mix(in srgb, var(--wo-warn) 45%, transparent); background: color-mix(in srgb, var(--wo-warn) 12%, transparent); }
+            .wo-tag-link { color: var(--wo-accent); border-color: color-mix(in srgb, var(--wo-accent) 45%, transparent); background: color-mix(in srgb, var(--wo-accent) 12%, transparent); }
+            .wo-errors { color: var(--wo-bad); white-space: pre-wrap; margin: .5em 0; }
+            .wo-errors:empty { display: none; }
             .wo-list { margin: 0 0 1em; padding: 0; list-style: none; }
             .wo-list li { display: flex; align-items: center; gap: .75em; padding: .75em 0; border-bottom: 1px solid var(--wo-border); flex-wrap: wrap; }
             .wo-list .wo-meta { flex: 1; min-width: 12em; }
             .wo-list .wo-name { font-weight: 600; }
-            .wo-list .wo-sub { opacity: .7; font-size: .9em; }
-            .wo-stats { flex: 1 0 100%; min-width: 0; max-width: 100%; }
-            .wo-linkrow { display: flex; align-items: flex-start; gap: 0 1em; flex-wrap: wrap; }
-            .wo-linkrow > .inputContainer { flex: 1 1 20em; margin-bottom: 1em; }
-            .wo-linkrow > .emby-button, .wo-linkrow > [is="emby-button"] { margin: 1.4em 0 0; }
+            .wo-list .wo-sub { color: var(--wo-text2); font-size: .9em; }
             .wo-readymade .wo-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-            .wo-readymade h3 { margin: 1em 0 .25em; font-size: 1em; font-weight: 600; opacity: .85; }
-            .wo-tag { display: inline-block; font-size: .8em; padding: .1em .5em; border-radius: 1em; background: var(--wo-soft); margin-left: .4em; white-space: nowrap; }
-            .wo-tag-update { color: var(--wo-warn); }
-            .wo-notice code { overflow-wrap: anywhere; }
-            .wo-table-scroll { overflow-x: auto; }
+            .wo-readymade h4 { margin: 1em 0 .25em; font-size: 1em; font-weight: 600; }
+            .wo-tag + .wo-tag { margin-left: .3em; }
+
+            /* Orders: summary tiles */
+            .wo-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(10em, 1fr)); gap: .75em; margin: 0 0 1.75em; }
+            .wo-tile { padding: .9em 1.1em; border-radius: .75em; border: 1px solid var(--wo-border); background: var(--wo-panel); color: inherit; font: inherit; text-align: left; }
+            button.wo-tile { cursor: pointer; }
+            button.wo-tile:hover, button.wo-tile:focus-visible { border-color: currentColor; outline: none; }
+            .wo-tile-num { font-size: 1.75em; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+            .wo-tile-label { font-size: .72em; letter-spacing: .1em; text-transform: uppercase; color: var(--wo-text2); margin-top: .25em; }
+            .wo-tile.wo-has-bad .wo-tile-num { color: var(--wo-bad-text); }
+            .wo-tile.wo-has-warn .wo-tile-num { color: var(--wo-warn-text); }
+
+            /* Orders: toolbar */
+            .wo-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75em; margin: 0 0 1em; }
+            .wo-toolbar h3 { margin: 0 auto 0 0; font-size: 1.25em; font-weight: 600; }
+            .wo-toolbar h3 .wo-muted { font-weight: normal; font-size: .8em; }
+            .wo-search { position: relative; flex: 1 1 13em; max-width: 20em; }
+            .wo-search > .material-icons { position: absolute; left: .65em; top: 50%; transform: translateY(-50%); color: var(--wo-text2); pointer-events: none; z-index: 1; }
+            .wo-search input { padding-left: 2.4em !important; width: 100%; box-sizing: border-box; }
+
+            /* Orders: the list */
+            .wo-orders-box { border: 1px solid var(--wo-border); border-radius: .75em; background: var(--wo-panel); }
+            .wo-orders { list-style: none; margin: 0; padding: 0; }
+            .wo-order { display: grid; grid-template-columns: minmax(0, 1fr) 10.5em 13em 6.5em; grid-template-areas: "main lib viewers actions";
+              gap: .75em 1.5em; align-items: center; padding: .9em 1.25em; border-top: 1px solid var(--wo-border); }
+            .wo-orders > .wo-order:first-child { border-top-color: transparent; }
+            .wo-orders-head { padding-block: .6em; color: var(--wo-text2); border-top: 0; }
+            .wo-orders-head > span { font-size: .8em; }
+            .wo-orders-head > .wo-order-main { padding-left: 8.75em; }
+            .wo-order-main { grid-area: main; display: flex; gap: 1em; align-items: center; min-width: 0; }
+            .wo-order-lib { grid-area: lib; font-size: .88em; }
+            .wo-order-viewers { grid-area: viewers; font-size: .88em; color: var(--wo-text2); min-width: 0; }
+            .wo-order-actions { grid-area: actions; display: flex; gap: .4em; align-items: center; justify-content: flex-end; position: relative; }
+            .wo-stats { grid-column: 1 / -1; min-width: 0; max-width: 100%; }
+            .wo-thumb { position: relative; width: 6em; aspect-ratio: 16 / 9; border-radius: .4em; overflow: hidden; flex: none;
+              background: hsl(var(--wo-hue, 200) 30% 30%); display: flex; align-items: flex-end; }
+            .wo-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+            .wo-thumb-text { padding: .3em .45em; font-size: .7em; font-weight: 600; letter-spacing: .04em; color: #fff; opacity: .85; }
+            .wo-order-title { font-weight: 600; font-size: 1.05em; overflow-wrap: anywhere; }
+            .wo-order-sub { font-size: .85em; color: var(--wo-text2); margin-top: .15em; }
+            .wo-order-sub code { font-size: .95em; }
+            .wo-lib-text { margin-bottom: .35em; }
+            .wo-lib-text .wo-bad-text { color: var(--wo-bad-text); }
+            .wo-lib-text.wo-all { color: var(--wo-ok-text); }
+            .wo-lib-bar { height: 6px; border-radius: 3px; background: var(--wo-soft); overflow: hidden; }
+            .wo-lib-bar > div { height: 100%; border-radius: 3px; background: var(--wo-accent); }
+            .wo-lib-text.wo-all + .wo-lib-bar > div { background: var(--wo-ok); }
+            .wo-viewers-btn { display: inline-flex; align-items: center; gap: .45em; max-width: 100%; min-height: 2.4em; margin-left: -.5em; padding: 0 .5em; border: 0; border-radius: .4em;
+              background: none; color: inherit; font: inherit; color: var(--jf-palette-text-primary, inherit); cursor: pointer; text-align: left; }
+            .wo-viewers-btn:hover, .wo-viewers-btn:focus-visible { background: var(--wo-soft); outline: none; }
+            .wo-viewers-btn[aria-expanded="true"] .expand_more { transform: rotate(180deg); }
+            .wo-icon-round { display: inline-grid; place-items: center; width: 2.5em; height: 2.5em; padding: 0; border: 0; border-radius: 50%; background: none; color: inherit; cursor: pointer; }
+            .wo-icon-round:hover, .wo-icon-round:focus-visible, .wo-icon-round[aria-expanded="true"] { background: var(--wo-soft); outline: none; }
+            .wo-menu { position: absolute; right: 0; top: calc(100% + .3em); z-index: 20; min-width: 14em; padding: .35em; border-radius: .6em;
+              background: var(--jf-palette-background-paper, #242424); border: 1px solid var(--wo-border); box-shadow: 0 .75em 2em rgba(0,0,0,.45); }
+            .wo-menu button { display: flex; align-items: center; gap: .75em; width: 100%; min-height: 2.6em; padding: 0 .75em; border: 0; border-radius: .4em;
+              background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; white-space: nowrap; }
+            .wo-menu button:hover, .wo-menu button:focus-visible { background: var(--wo-soft); outline: none; }
+            .wo-menu .wo-danger { color: var(--wo-bad-text); }
+            .wo-menu hr { border: 0; border-top: 1px solid var(--wo-border); margin: .35em .25em; }
+            .wo-empty { display: flex; gap: 1em; align-items: flex-start; }
+            .wo-empty > .material-icons { font-size: 2em; color: var(--wo-accent); }
+            .wo-empty p { margin: .3em 0 1em; }
+            .wo-empty-actions { display: flex; flex-wrap: wrap; gap: .5em; }
+            .wo-nomatch { color: var(--wo-text2); margin-top: 1em; }
+            @container (max-width: 54em) {
+              .wo-order { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "main main actions" "lib viewers viewers"; }
+              .wo-orders-head { display: none; }
+            }
+            @container (max-width: 30em) {
+              .wo-order { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main main" "lib actions" "viewers viewers"; padding-inline: 1em; }
+              .wo-thumb { width: 4.5em; }
+              .wo-order-id { display: none; }
+              .wo-nav button { padding: 0 .7em; gap: .5em; }
+              .wo-nav button > .material-icons { display: none; }
+              .wo-toolbar h3 { flex: 1 1 100%; }
+            }
+
+            /* Viewers table */
+            .wo-table-scroll { overflow-x: auto; border: 1px solid var(--wo-border); border-radius: .6em; background: var(--wo-panel); }
             .wo-table { border-collapse: collapse; width: 100%; font-size: .9em; }
-            .wo-table caption { caption-side: bottom; text-align: left; padding-top: .5em; font-size: .9em; }
-            .wo-table th, .wo-table td { text-align: left; padding: .5em .75em .5em 0; border-bottom: 1px solid var(--wo-border); vertical-align: middle; }
-            .wo-table thead th { font-weight: 600; opacity: .8; white-space: nowrap; }
+            .wo-table caption { caption-side: bottom; text-align: left; padding: .6em .9em; font-size: .9em; }
+            .wo-table th, .wo-table td { text-align: left; padding: .55em .9em; border-bottom: 1px solid var(--wo-border); vertical-align: middle; }
+            .wo-table thead th { font-weight: 500; color: var(--wo-text2); white-space: nowrap; }
             .wo-table tbody th { font-weight: 600; }
-            .wo-bar { width: 8em; height: 6px; border-radius: 3px; background: rgba(128,128,128,.3); overflow: hidden; margin-bottom: .25em; }
-            .wo-bar > div { height: 100%; background: var(--jf-palette-primary-main, #00a4dc); }
+            .wo-bar { width: 8em; height: 6px; border-radius: 3px; background: var(--wo-soft); overflow: hidden; margin-bottom: .25em; }
+            .wo-bar > div { height: 100%; background: var(--wo-accent); }
             .wo-stat { white-space: nowrap; }
-            .wo-stat-Stalled { color: var(--wo-warn); }
+            .wo-stat-Stalled { color: var(--wo-warn-text); }
+            .wo-stat-Finished { color: var(--wo-ok-text); }
             .wo-stat-Finished::before { content: "\2713  "; }
-            .wo-errors { color: var(--wo-bad); white-space: pre-wrap; margin: .5em 0; }
-            .wo-errors:empty { display: none; }
-            .wo-notice { border: 1px solid var(--wo-warn); border-radius: 6px; padding: .75em 1em; margin: 1em 0; }
-            .wo-notice a { color: inherit; }
-            .wo-details { margin: 1.5em 0; border-top: 1px solid var(--wo-border); padding-top: .5em; }
-            .wo-details > summary { cursor: pointer; font-size: 1.1em; padding: .5em 0; }
-            #woImportJson { font-family: monospace; min-height: 12em; }
-            .wo-details > summary .wo-muted { font-size: .85em; }
-            .wo-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .5em 1.5em; margin: .5em 0 1em; }
-            .wo-toolbar > .emby-button, .wo-toolbar > [is="emby-button"] { margin: 0; }
-            .wo-filter { flex: 1 1 18em; max-width: 30em; margin: 0; }
-            .wo-dropzone { display: flex; align-items: center; gap: 1em; flex-wrap: wrap; padding: 1em; margin: .5em 0 1.5em;
-              border: 2px dashed var(--wo-border); border-radius: 8px; }
-            .wo-dropzone.wo-dragover { border-color: currentColor; background: var(--wo-soft); }
-            .wo-dropzone .emby-button > .material-icons { margin-right: .3em; }
+
+            /* Add orders */
+            .wo-new-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 1em 1.25em; }
+            .wo-new-icon { width: 3.25em; height: 3.25em; border-radius: .75em; flex: none; display: grid; place-items: center; color: var(--wo-accent); background: color-mix(in srgb, var(--wo-accent) 15%, transparent); }
+            .wo-new-icon .material-icons { font-size: 1.7em; }
+            .wo-new-text { flex: 1 1 18em; min-width: 0; }
+            .wo-new-text p { margin: .2em 0 0; }
+            .wo-dropzone { display: flex; align-items: center; justify-content: center; gap: .75em 1em; flex-wrap: wrap; text-align: center; padding: 1.25em; margin: 0 0 1em;
+              border: 2px dashed var(--wo-border); border-radius: .6em; }
+            .wo-dropzone.wo-dragover { border-color: var(--wo-accent); background: color-mix(in srgb, var(--wo-accent) 8%, transparent); }
+            .wo-drop-icon { color: var(--wo-accent); font-size: 1.8em !important; }
+            .wo-import-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(18em, 1fr)); gap: 1em; }
+            .wo-import-box { border: 1px solid var(--wo-border); border-radius: .6em; padding: 1em 1em 1.1em; }
+            .wo-import-box .inputContainer { margin-bottom: .75em; }
+            #woImportJson { font-family: monospace; min-height: 5em; }
+            #woSettingsForm .emby-button[type="submit"] { margin-top: 1em; }
 
             .wo-entries { list-style: none; margin: 0; padding: 0; }
             /* Long orders scroll inside the list, so the add-entries tools below stay close. */
@@ -139,17 +277,127 @@
         <div data-role="content">
             <div class="content-primary">
 
-                <!-- ============ Order list ============ -->
-                <section id="woListView">
-                    <div class="wo-header">
-                        <h2 class="sectionTitle">Watch Order</h2>
+                <div class="wo-app">
+                <header class="wo-top">
+                    <div class="wo-brand">
+                        <div class="wo-logo" aria-hidden="true"><span class="material-icons format_list_numbered"></span></div>
+                        <div class="wo-brand-text">
+                            <h2 class="sectionTitle">Watch Order<span id="woPluginVersion" class="wo-version"></span></h2>
+                            <p class="wo-tagline">Watch films and episodes from across a franchise in one defined order. Each user's progress follows their normal watched status.</p>
+                        </div>
                     </div>
-                    <p class="wo-muted">Watch films and episodes from across a franchise in one defined order. Each user's progress follows their normal watched status.</p>
-                    <div id="woWebClientNotice" class="wo-notice" role="status" hidden></div>
+                    <div class="wo-top-side">
+                        <span id="woWebClientChip" class="wo-pill" hidden></span>
+                        <a is="emby-linkbutton" class="button-link wo-help" href="https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order#readme" target="_blank" rel="noopener"><span class="material-icons help_outline" aria-hidden="true"></span><span>Help</span></a>
+                    </div>
+                </header>
+                <div id="woWebClientNotice" class="wo-notice" role="status" hidden></div>
 
-                    <details class="wo-details" data-section="settings">
-                        <summary>Settings</summary>
-                        <form id="woSettingsForm">
+                <div class="wo-shell">
+                    <nav class="wo-nav" aria-label="Watch Order">
+                        <button type="button" data-area="orders"><span class="material-icons format_list_numbered" aria-hidden="true"></span><span>Orders</span><span class="wo-nav-count" id="woNavOrders"></span></button>
+                        <button type="button" data-area="add"><span class="material-icons library_add" aria-hidden="true"></span><span>Add orders</span><span class="wo-nav-count wo-warn" id="woNavUpdates"></span></button>
+                        <button type="button" data-area="settings"><span class="material-icons tune" aria-hidden="true"></span><span>Settings</span></button>
+                        <div class="wo-nav-sep" role="presentation"></div>
+                        <a class="wo-nav-link" href="https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/blob/main/docs/order-format.md" target="_blank" rel="noopener"><span class="material-icons description" aria-hidden="true"></span><span>Order file format</span></a>
+                    </nav>
+
+                    <div class="wo-main">
+                <section id="woListView">
+                    <!-- ============ Orders ============ -->
+                    <section class="wo-area" data-area-panel="orders" aria-labelledby="woOrdersTitle">
+                        <div class="wo-tiles" id="woTiles">
+                            <div class="wo-tile"><div class="wo-tile-num" id="woTileOrders">0</div><div class="wo-tile-label">Orders</div></div>
+                            <div class="wo-tile" title="People part-way through at least one order"><div class="wo-tile-num" id="woTileWatching">–</div><div class="wo-tile-label">Users watching</div></div>
+                            <div class="wo-tile" title="Films and episodes the orders name that aren't in your library"><div class="wo-tile-num" id="woTileMissing">0</div><div class="wo-tile-label">Missing from library</div></div>
+                            <button type="button" class="wo-tile" data-go-area="add"><div class="wo-tile-num" id="woTileUpdates">0</div><div class="wo-tile-label">Updates available</div></button>
+                        </div>
+
+                        <div class="wo-toolbar">
+                            <h3 id="woOrdersTitle">Orders <span id="woOrderCount" class="wo-muted"></span></h3>
+                            <div class="wo-search" id="woFilterBox" hidden>
+                                <span class="material-icons search" aria-hidden="true"></span>
+                                <input is="emby-input" type="search" id="woFilter" placeholder="Filter orders" aria-label="Filter orders" autocomplete="off" />
+                            </div>
+                            <button is="emby-button" type="button" id="woRefresh" class="raised" title="Match every order against your library now">
+                                <span class="material-icons refresh" aria-hidden="true"></span><span>Re-match all</span>
+                            </button>
+                            <button is="emby-button" type="button" id="woNew" class="raised button-submit">
+                                <span class="material-icons add" aria-hidden="true"></span><span>New order</span>
+                            </button>
+                        </div>
+
+                        <div class="wo-orders-box" id="woOrdersBox">
+                            <div class="wo-order wo-orders-head" aria-hidden="true">
+                                <span class="wo-order-main">Order</span><span class="wo-order-lib">In your library</span><span class="wo-order-viewers">Viewers</span><span class="wo-order-actions"></span>
+                            </div>
+                            <ul id="woOrders" class="wo-orders"></ul>
+                        </div>
+                        <div id="woEmpty" class="wo-panel wo-empty" hidden>
+                            <span class="material-icons playlist_add" aria-hidden="true"></span>
+                            <div>
+                                <p><strong>No orders yet.</strong> Start one of your own, import one, or add a ready-made order.</p>
+                                <div class="wo-empty-actions">
+                                    <button is="emby-button" type="button" class="raised button-submit" data-new-order><span>New order</span></button>
+                                    <button is="emby-button" type="button" class="raised" data-go-area="add"><span>Import or add ready-made</span></button>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="woNoMatch" class="wo-panel wo-nomatch" hidden>No orders match that filter.</p>
+                    </section>
+
+                    <!-- ============ Add orders ============ -->
+                    <section class="wo-area" data-area-panel="add" aria-label="Add orders" hidden>
+                        <section class="wo-panel wo-new-panel" aria-labelledby="woNewTitle">
+                            <div class="wo-new-icon" aria-hidden="true"><span class="material-icons edit_note"></span></div>
+                            <div class="wo-new-text">
+                                <div class="wo-eyebrow">Start fresh</div>
+                                <h3 id="woNewTitle">Create a new order</h3>
+                                <p class="wo-muted">Build one from your library, metadata providers or a collection, in whatever order you like.</p>
+                            </div>
+                            <button is="emby-button" type="button" class="raised button-submit" data-new-order><span class="material-icons add" aria-hidden="true"></span><span>New order</span></button>
+                        </section>
+
+                        <section class="wo-panel" aria-labelledby="woImportTitle">
+                            <div class="wo-eyebrow">Bring your own</div>
+                            <h3 id="woImportTitle">Import</h3>
+                            <p class="wo-muted">If you already have an order with the same ID, you're asked before it's replaced.</p>
+                            <div id="woDropZone" class="wo-dropzone">
+                                <input type="file" id="woImportFile" accept=".json,application/json" multiple hidden />
+                                <span class="material-icons upload_file wo-drop-icon" aria-hidden="true"></span>
+                                <span>Drop order files here <span class="wo-muted">· .json, several at once</span></span>
+                                <button is="emby-button" type="button" id="woChooseFiles" class="raised"><span>Choose files…</span></button>
+                            </div>
+                            <div class="wo-import-grid">
+                                <div class="wo-import-box">
+                                    <div class="inputContainer">
+                                        <input is="emby-input" type="url" id="woImportUrl" label="From a link" placeholder="https://" autocomplete="off" />
+                                        <div class="fieldDescription">An order's .json file. GitHub file pages and Gists work too.</div>
+                                    </div>
+                                    <button is="emby-button" type="button" id="woImportLink" class="raised"><span>Import from link</span></button>
+                                </div>
+                                <div class="wo-import-box">
+                                    <div class="inputContainer">
+                                        <textarea is="emby-textarea" id="woImportJson" label="Paste an order" placeholder='{ "id": "my-order", "name": "My order", "entries": [ ... ] }'></textarea>
+                                    </div>
+                                    <button is="emby-button" type="button" id="woImport" class="raised"><span>Import</span></button>
+                                </div>
+                            </div>
+                            <div id="woImportErrors" class="wo-errors" role="alert"></div>
+                        </section>
+
+                        <section class="wo-panel" aria-labelledby="woReadyTitle">
+                            <div class="wo-eyebrow">Comes with the plugin</div>
+                            <h3 id="woReadyTitle">Ready-made orders</h3>
+                            <p class="wo-muted">Add the ones you want; nothing is added on its own. When a plugin update improves one you've added, it's offered here.</p>
+                            <div id="woReadyMade" class="wo-readymade"><p class="wo-muted">Loading…</p></div>
+                        </section>
+                    </section>
+
+                    <!-- ============ Settings ============ -->
+                    <section class="wo-area" data-area-panel="settings" aria-labelledby="woSettingsTitle" hidden>
+                        <h3 id="woSettingsTitle" class="wo-area-title">Settings</h3>
+                        <form id="woSettingsForm" class="wo-panel">
                             <div class="checkboxContainer">
                                 <label>
                                     <input is="emby-checkbox" type="checkbox" id="ShowInWebApp" />
@@ -213,59 +461,9 @@
                             <button is="emby-button" type="submit" class="raised button-submit block">
                                 <span>Save settings</span>
                             </button>
+                        
                         </form>
-                    </details>
-
-                    <details class="wo-details" data-section="orders" open>
-                        <summary>Watch orders <span id="woOrderCount" class="wo-muted"></span></summary>
-                        <div class="wo-toolbar">
-                            <button is="emby-button" type="button" id="woNew" class="raised button-submit">
-                                <span class="material-icons add" aria-hidden="true"></span>
-                                <span>New order</span>
-                            </button>
-                            <div class="inputContainer wo-filter" id="woFilterBox" hidden>
-                                <input is="emby-input" type="search" id="woFilter" label="Filter orders" autocomplete="off" />
-                            </div>
-                        </div>
-                        <ul id="woOrders" class="wo-list"></ul>
-                        <p id="woEmpty" class="fieldDescription" hidden>No orders yet. Create one with <strong>New order</strong>, or import one below.</p>
-                        <p id="woNoMatch" class="fieldDescription" hidden>No orders match that filter.</p>
-                        <button is="emby-button" type="button" id="woRefresh" class="raised button-alt">
-                            <span>Re-match all orders now</span>
-                        </button>
-                    </details>
-
-                    <details class="wo-details" data-section="readymade">
-                        <summary>Ready-made orders</summary>
-                        <p class="fieldDescription">Orders that come with the plugin. Add the ones you want; nothing is added on its own. When a plugin update improves one you've added, you'll be offered the new version here.</p>
-                        <div id="woReadyMade" class="wo-readymade"><p class="wo-muted">Loading…</p></div>
-                    </details>
-
-                    <details class="wo-details" data-section="import">
-                        <summary>Import</summary>
-                        <div id="woDropZone" class="wo-dropzone">
-                            <input type="file" id="woImportFile" accept=".json,application/json" multiple hidden />
-                            <button is="emby-button" type="button" id="woChooseFiles" class="raised">
-                                <span class="material-icons upload_file" aria-hidden="true"></span><span>Choose files…</span>
-                            </button>
-                            <span class="wo-muted">or drop order files here. You can pick several at once.</span>
-                        </div>
-                        <div class="wo-linkrow">
-                            <div class="inputContainer">
-                                <input is="emby-input" type="url" id="woImportUrl" label="Or import from a link" placeholder="https://" autocomplete="off" />
-                                <div class="fieldDescription">A link to an order's .json file. GitHub file pages and Gists work too.</div>
-                            </div>
-                            <button is="emby-button" type="button" id="woImportLink" class="raised"><span>Import from link</span></button>
-                        </div>
-                        <div class="inputContainer">
-                            <textarea is="emby-textarea" id="woImportJson" label="Or paste an order" placeholder='{ "id": "my-order", "name": "My order", "entries": [ ... ] }'></textarea>
-                            <div class="fieldDescription">If you already have an order with the same ID, you're asked before it's replaced.</div>
-                        </div>
-                        <div id="woImportErrors" class="wo-errors" role="alert"></div>
-                        <button is="emby-button" type="button" id="woImport" class="raised button-submit">
-                            <span>Import</span>
-                        </button>
-                    </details>
+                    </section>
                 </section>
 
                 <!-- ============ Order builder ============ -->
@@ -470,6 +668,9 @@
                         <button is="emby-button" type="button" id="woCancel" class="raised button-cancel"><span>Cancel</span></button>
                     </div>
                 </section>
+                    </div><!-- .wo-main -->
+                </div><!-- .wo-shell -->
+                </div><!-- .wo-app -->
             </div>
         </div>
     </div>
