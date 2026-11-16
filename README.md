@@ -54,7 +54,7 @@ These screenshots are from a server using the [ElegantFin](https://github.com/ls
 3. Dashboard → **Watch Order** → add one from **Ready-made orders**, **New order** to build your own, or **Import** a file or link.
 4. *(Recommended)* For the Watch Orders page, the home screen row and the section on item pages in the web app, add the repository `https://www.iamparadox.dev/jellyfin/plugins/manifest.json`, install **File Transformation**, and restart Jellyfin. Users then see **Watch Orders** in the web app's library bar (they may need to refresh the page once). Without it, orders still work through their playlists, autoplay and the API.
 
-**Requires Jellyfin 12.1 or later.**
+**Requires Jellyfin 12.1 or later.** Tested on Jellyfin 12.1, 12.2, 12.3 and 12.4.
 
 ## Repository layout
 
@@ -152,7 +152,7 @@ dotnet test
 Needs the .NET 10 SDK. To try it on a server, copy `src/Jellyfin.Plugin.WatchOrder/bin/Release/net10.0/Jellyfin.Plugin.WatchOrder.dll` into
 `<jellyfin config>/plugins/WatchOrder_1.1.0.0/` and restart Jellyfin.
 
-The resolver's tests run against `InMemoryLibrary` (in the tests project), which follows Jellyfin 12.1's rules for the three lookups the resolver makes: provider ids match on exact name and value, names match on Jellyfin's "clean" form (no accents, lower case, punctuation as spaces), and missing episodes aren't returned. If a Jellyfin upgrade changes those rules, update `InMemoryLibrary` to match and the tests will show what it affects.
+The resolver's tests run against `InMemoryLibrary` (in the tests project), which follows Jellyfin's rules (unchanged from 12.1 to 12.4) for the three lookups the resolver makes: provider ids match on exact name and value, names match on Jellyfin's "clean" form (no accents, lower case, punctuation as spaces), and missing episodes aren't returned. If a Jellyfin upgrade changes those rules, update `InMemoryLibrary` to match and the tests will show what it affects.
 
 ### Releasing
 

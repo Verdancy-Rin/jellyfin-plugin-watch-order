@@ -109,9 +109,10 @@ public sealed class OrderRun
             return false;
         }
 
-        // Jellyfin clears "watched" when playback starts and sets it again at the end, updating the last played
-        // date; marking an item watched by hand after clearing it also sets the date. So: watched now, and either
-        // not watched when the run began, or played/marked since.
+        // Watched now, and either not watched when the run began, or played or marked since. Finishing an item
+        // or marking it watched by hand sets the last played date. Starting a rewatch also moved it in Jellyfin
+        // 12.1; from 12.2 it only moves once playback passes the resume point, so a rewatch that was only
+        // started no longer counts in this run.
         var knownAtStart = PlayedAtStart.TryGetValue(itemKey, out var playedAtStart);
         return (knownAtStart && !playedAtStart) || lastPlayed >= StartedAt;
     }
