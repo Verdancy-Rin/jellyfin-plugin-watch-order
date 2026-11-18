@@ -383,8 +383,16 @@ public class WatchOrderController : ControllerBase
             case null:
                 return Ok(Array.Empty<ItemOrderInfo>());
             case Series or Season:
+                // The episodes in the series or season, as the orders recorded them when they were matched: no need
+                // to load every episode of every order to find out.
                 single = false;
-                matches = id => _libraryManager.GetItemById(id) is Episode episode && (episode.SeriesId == itemId || episode.SeasonId == itemId);
+                var inIt = _service.GetDefinitions()
+                    .Select(d => _service.Get(d.Id))
+                    .SelectMany(o => o?.Steps ?? new List<ResolvedStep>())
+                    .Where(s => s.ItemId is not null && (s.SeriesId == itemId || s.SeasonId == itemId))
+                    .Select(s => s.ItemId!.Value)
+                    .ToHashSet();
+                matches = inIt.Contains;
                 break;
             default:
                 matches = id => id == itemId;

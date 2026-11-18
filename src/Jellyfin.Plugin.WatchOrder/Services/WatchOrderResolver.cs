@@ -1,7 +1,9 @@
 using Jellyfin.Data.Enums;
 using Jellyfin.Plugin.WatchOrder.Models;
 using Jellyfin.Plugin.WatchOrder.Parsing;
+using System.Diagnostics;
 using MediaBrowser.Controller.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.WatchOrder.Services;
 
@@ -12,10 +14,20 @@ namespace Jellyfin.Plugin.WatchOrder.Services;
 public class WatchOrderResolver
 {
     private readonly ILibraryLookup _library;
+    private readonly ILogger? _logger;
 
     public WatchOrderResolver(ILibraryLookup library)
     {
         _library = library;
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="WatchOrderResolver"/> class, with logging.</summary>
+    /// <param name="library">The library lookups.</param>
+    /// <param name="logger">The logger.</param>
+    public WatchOrderResolver(ILibraryLookup library, ILogger<WatchOrderResolver> logger)
+    {
+        _library = library;
+        _logger = logger;
     }
 
     /// <summary>
@@ -34,6 +46,21 @@ public class WatchOrderResolver
     /// <returns>The resolved order.</returns>
     public ResolvedWatchOrder Resolve(WatchOrderDefinition definition, bool allowTitle)
     {
+        var timer = Stopwatch.StartNew();
+        var resolved = ResolveSteps(definition, allowTitle);
+        SlowLog.Took(
+            _logger,
+            timer,
+            "Matching {Order} against the library ({Entries} entries, {Found} of {Steps} films and episodes found)",
+            definition.Name,
+            definition.Entries.Count,
+            resolved.Steps.Count(s => s.ItemId is not null),
+            resolved.Steps.Count);
+        return resolved;
+    }
+
+    private ResolvedWatchOrder ResolveSteps(WatchOrderDefinition definition, bool allowTitle)
+    {
         var resolved = new ResolvedWatchOrder
         {
             Id = definition.Id,
@@ -47,13 +74,22 @@ public class WatchOrderResolver
         var seriesCache = new Dictionary<string, (BaseItem? Item, MatchStatus Status)>(StringComparer.OrdinalIgnoreCase);
         var episodeCache = new Dictionary<Guid, List<BaseItem>>();
 
+        // Every film and series the order names by provider id, fetched in one go per kind: Jellyfin reads through the
+        // whole library for each provider-id query, so one per entry is very slow on a big library.
+        var steps = WatchOrderParser.Expand(definition);
+        var byId = new Dictionary<BaseItemKind, IReadOnlyList<BaseItem>>
+        {
+            [BaseItemKind.Movie] = FetchByProviderIds(BaseItemKind.Movie, steps.Where(s => s.Type == WatchOrderEntryType.Movie)),
+            [BaseItemKind.Series] = FetchByProviderIds(BaseItemKind.Series, steps.Where(s => s.Type != WatchOrderEntryType.Movie))
+        };
+
         // Which series each step belongs to (the library's series id when it's there, else the order's name), for
         // making sections automatically; null for films.
         var seriesKeys = new List<string?>();
         var named = new List<OrderSection>();
         var lastEntry = -1;
 
-        foreach (var step in WatchOrderParser.Expand(definition))
+        foreach (var step in steps)
         {
             var entry = step.EntryIndex < definition.Entries.Count ? definition.Entries[step.EntryIndex] : null;
             var optional = (entry?.Optional ?? false, entry is { Optional: true, Recommended: true });
@@ -68,14 +104,14 @@ public class WatchOrderResolver
             {
                 case WatchOrderEntryType.Movie:
                 {
-                    var (item, status) = FindTopLevel(BaseItemKind.Movie, step.Title, step.Year, step.ProviderIds, allowTitle);
+                    var (item, status) = FindTopLevel(BaseItemKind.Movie, step.Title, step.Year, step.ProviderIds, allowTitle, byId);
                     Add(resolved, step, step.Label, item, status, optional);
                     break;
                 }
 
                 case WatchOrderEntryType.Episode:
                 {
-                    var (series, status) = FindSeries(step, allowTitle, seriesCache);
+                    var (series, status) = FindSeries(step, allowTitle, seriesCache, byId);
                     var episode = series is null ? null : FindEpisodes(series, step.Season!.Value, step.Episode, episodeCache).FirstOrDefault();
                     Add(resolved, step, step.Label, episode, episode is null ? MatchStatus.Missing : status, optional);
                     break;
@@ -83,7 +119,7 @@ public class WatchOrderResolver
 
                 case WatchOrderEntryType.Season:
                 {
-                    var (series, status) = FindSeries(step, allowTitle, seriesCache);
+                    var (series, status) = FindSeries(step, allowTitle, seriesCache, byId);
                     var episodes = series is null ? new List<BaseItem>() : FindEpisodes(series, step.Season!.Value, null, episodeCache);
 
                     if (episodes.Count == 0)
@@ -104,7 +140,7 @@ public class WatchOrderResolver
             string? key = null;
             if (step.Type != WatchOrderEntryType.Movie)
             {
-                var (series, _) = FindSeries(step, allowTitle, seriesCache);
+                var (series, _) = FindSeries(step, allowTitle, seriesCache, byId);
                 key = series is not null ? series.Id.ToString("N") : "name:" + (step.Title ?? string.Empty).Trim().ToUpperInvariant();
             }
 
@@ -120,7 +156,11 @@ public class WatchOrderResolver
         {
             var kind = image.Type == "series" ? BaseItemKind.Series : BaseItemKind.Movie;
             var ids = new WatchOrderEntry { ProviderIds = image.ProviderIds ?? new Dictionary<string, string>() }.ProviderIds;
-            resolved.ImageItemId = FindTopLevel(kind, image.Title, image.Year, ids, allowTitle).Item?.Id;
+            var imageById = new Dictionary<BaseItemKind, IReadOnlyList<BaseItem>>
+            {
+                [kind] = ids.Count == 0 ? Array.Empty<BaseItem>() : _library.FindByProviderIds(kind, ids.ToList())
+            };
+            resolved.ImageItemId = FindTopLevel(kind, image.Title, image.Year, ids, allowTitle, imageById).Item?.Id;
         }
 
         return resolved;
@@ -254,19 +294,22 @@ public class WatchOrderResolver
             Kind = step.Type == WatchOrderEntryType.Movie ? "Movie" : "Episode",
             Series = step.Type == WatchOrderEntryType.Movie ? null : (item as MediaBrowser.Controller.Entities.TV.Episode)?.SeriesName is { Length: > 0 } name ? name : step.Title,
             Season = step.Season,
-            Episode = step.Type == WatchOrderEntryType.Season ? item?.IndexNumber : step.Episode
+            Episode = step.Type == WatchOrderEntryType.Season ? item?.IndexNumber : step.Episode,
+            SeriesId = item is MediaBrowser.Controller.Entities.TV.Episode { SeriesId: var seriesId } && seriesId != Guid.Empty ? seriesId : null,
+            SeasonId = item is MediaBrowser.Controller.Entities.TV.Episode { SeasonId: var seasonId } && seasonId != Guid.Empty ? seasonId : null
         });
     }
 
     private (BaseItem? Item, MatchStatus Status) FindSeries(
         WatchOrderStep step,
         bool allowTitle,
-        Dictionary<string, (BaseItem? Item, MatchStatus Status)> cache)
+        Dictionary<string, (BaseItem? Item, MatchStatus Status)> cache,
+        Dictionary<BaseItemKind, IReadOnlyList<BaseItem>> byId)
     {
         var key = string.Join('|', step.ProviderIds.OrderBy(p => p.Key).Select(p => $"{p.Key}={p.Value}")) + "|" + step.Title + "|" + step.Year;
         if (!cache.TryGetValue(key, out var hit))
         {
-            hit = FindTopLevel(BaseItemKind.Series, step.Title, step.Year, step.ProviderIds, allowTitle);
+            hit = FindTopLevel(BaseItemKind.Series, step.Title, step.Year, step.ProviderIds, allowTitle, byId);
             cache[key] = hit;
         }
 
@@ -278,15 +321,17 @@ public class WatchOrderResolver
         string? title,
         int? year,
         IReadOnlyDictionary<string, string> providerIds,
-        bool allowTitle)
+        bool allowTitle,
+        Dictionary<BaseItemKind, IReadOnlyList<BaseItem>> byId)
     {
         if (providerIds.Count > 0)
         {
-            var byId = _library.FindByProviderIds(kind, providerIds).FirstOrDefault();
+            // Any one id matching is enough, as with Jellyfin's own lookup.
+            var match = byId[kind].FirstOrDefault(i => providerIds.Any(p => CachedLibraryLookup.HasProviderId(i, p)));
 
-            if (byId is not null)
+            if (match is not null)
             {
-                return (byId, MatchStatus.Matched);
+                return (match, MatchStatus.Matched);
             }
         }
 
@@ -305,6 +350,25 @@ public class WatchOrderResolver
         }
 
         return (null, MatchStatus.Missing);
+    }
+
+    /// <summary>
+    /// Looks up the films and series of several orders by provider id in one query per kind. With
+    /// <see cref="CachedLibraryLookup"/> in front of the library, resolving each order afterwards finds them all
+    /// remembered, rather than reading through the library once per order.
+    /// </summary>
+    /// <param name="definitions">The orders.</param>
+    public void Prefetch(IEnumerable<WatchOrderDefinition> definitions)
+    {
+        var steps = definitions.SelectMany(WatchOrderParser.Expand).ToList();
+        FetchByProviderIds(BaseItemKind.Movie, steps.Where(s => s.Type == WatchOrderEntryType.Movie));
+        FetchByProviderIds(BaseItemKind.Series, steps.Where(s => s.Type != WatchOrderEntryType.Movie));
+    }
+
+    private IReadOnlyList<BaseItem> FetchByProviderIds(BaseItemKind kind, IEnumerable<WatchOrderStep> steps)
+    {
+        var pairs = steps.SelectMany(s => s.ProviderIds).Distinct().ToList();
+        return pairs.Count == 0 ? Array.Empty<BaseItem>() : _library.FindByProviderIds(kind, pairs);
     }
 
     private List<BaseItem> FindEpisodes(BaseItem series, int season, int? episode, Dictionary<Guid, List<BaseItem>> cache)

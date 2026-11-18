@@ -240,6 +240,21 @@ public sealed class ResolverTests
     }
 
     [Fact]
+    public void Episodes_RememberTheirSeries_SoItemPagesNeedNotLoadThem()
+    {
+        var show = _library.Show("Andor", 2022, ("Tvdb", "393189"));
+        _library.Episodes(show, 1, new[] { 1, 2 });
+        var film = _library.Film("Rogue One", 2016, ("Tmdb", "330459"));
+        var steps = Resolve("""
+            { "type": "season", "series": "Andor", "providerIds": { "Tvdb": "393189" }, "season": 1 },
+            { "type": "movie", "providerIds": { "Tmdb": "330459" } },
+            { "type": "season", "series": "Andor", "providerIds": { "Tvdb": "393189" }, "season": 2 }
+            """).Steps;
+        Assert.Equal(new Guid?[] { show.Id, show.Id, null, null }, steps.Select(s => s.SeriesId));
+        Assert.Equal(film.Id, steps[2].ItemId);
+    }
+
+    [Fact]
     public void Series_ByTitle_ShowsAsMatchedByTitle()
     {
         var show = _library.Show("Steven Universe", 2013);

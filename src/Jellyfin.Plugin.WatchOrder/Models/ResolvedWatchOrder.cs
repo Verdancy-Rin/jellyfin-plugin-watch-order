@@ -62,6 +62,17 @@ public sealed class ResolvedStep
     public int? Episode { get; set; }
 
     /// <summary>
+    /// Gets or sets the library series the episode is in, when it's in the library: lets item pages find the orders
+    /// with a series' episodes without loading every episode. Not sent to the web app.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Guid? SeriesId { get; set; }
+
+    /// <summary>Gets or sets the library season the episode is in, when it's in the library. Not sent to the web app.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public Guid? SeasonId { get; set; }
+
+    /// <summary>
     /// Gets or sets the 0-based index of the section the step is in, within <see cref="ResolvedWatchOrder.Sections"/>.
     /// </summary>
     public int SectionIndex { get; set; }

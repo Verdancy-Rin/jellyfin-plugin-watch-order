@@ -200,7 +200,13 @@ public sealed class AutoplayFollower : IHostedService
 
             var homeState = _userState.GetHomeState(userId, definition.Id);
             var run = _userState.GetRun(userId, definition.Id);
-            if (homeState == HomeState.Hidden || _progress.GetProgress(order, userId) is not { } progress)
+            if (homeState == HomeState.Hidden)
+            {
+                continue;
+            }
+
+            var loaded = ItemBatch.ForSteps(_libraryManager, order.Steps, _logger); // for the progress, and for when each was last watched
+            if (_progress.GetProgress(order, userId, loaded) is not { } progress)
             {
                 continue;
             }
@@ -214,7 +220,7 @@ public sealed class AutoplayFollower : IHostedService
             var steps = new List<PlanStep>(progress.Steps.Count);
             foreach (var step in progress.Steps)
             {
-                var item = step.Step.ItemId is { } id ? _libraryManager.GetItemById(id) : null;
+                var item = step.Step.ItemId is { } id && loaded.TryGetValue(id, out var found) ? found : null;
                 steps.Add(new PlanStep(item is null ? null : step.Step.ItemId, step.Played, item?.GetBaseItemKind() == BaseItemKind.Episode, step.Skipped));
                 if (item is not null && item.Id != playing && _userDataManager.GetUserData(user, item)?.LastPlayedDate is { } played && played > lastActivity)
                 {
