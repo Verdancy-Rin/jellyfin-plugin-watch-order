@@ -213,6 +213,33 @@ public sealed class ResolverTests
     }
 
     [Fact]
+    public void Episodes_AreFetchedOncePerSeries_HoweverManyEntriesAndSeasonsUseThem()
+    {
+        // Like Naruto and Boruto: ranges, single episodes and whole seasons of the same series, in several seasons.
+        var show = _library.Show("Naruto Shippuden", 2007, ("Tvdb", "79824"));
+        _library.Episodes(show, 1, Enumerable.Range(1, 30));
+        _library.Episodes(show, 2, Enumerable.Range(1, 20), missing: new[] { 21 });
+        var other = _library.Show("Boruto", 2017, ("Tvdb", "328449"));
+        _library.Episodes(other, 1, Enumerable.Range(1, 5));
+        const string ids = """ "providerIds": { "Tvdb": "79824" } """;
+        var order = Resolve($$"""
+            { "type": "episodes", "series": "Naruto Shippuden", {{ids}}, "season": 1, "from": 1, "to": 12 },
+            { "type": "episode", "series": "Naruto Shippuden", {{ids}}, "season": 1, "episode": 13 },
+            { "type": "episodes", "series": "Naruto Shippuden", {{ids}}, "season": 1, "from": 14, "to": 30 },
+            { "type": "season", "series": "Boruto", "providerIds": { "Tvdb": "328449" }, "season": 1 },
+            { "type": "season", "series": "Naruto Shippuden", {{ids}}, "season": 2 },
+            { "type": "episodes", "series": "Naruto Shippuden", {{ids}}, "season": 2, "from": 20, "to": 21 }
+            """);
+
+        Assert.Equal(2, _library.EpisodeLookups);
+        Assert.Equal(30 + 5 + 20 + 1, order.Steps.Count(s => s.ItemId is not null));
+        Assert.Equal(new int?[] { 1, 2, 3 }, order.Steps.Take(3).Select(s => s.Episode));
+        var last = order.Steps.TakeLast(2).ToList();
+        Assert.Equal((2, 20, MatchStatus.Matched), (last[0].Season!.Value, last[0].Episode!.Value, last[0].Status));
+        Assert.Equal(MatchStatus.Missing, last[1].Status); // episode 21 is known but not in the library
+    }
+
+    [Fact]
     public void Series_ByTitle_ShowsAsMatchedByTitle()
     {
         var show = _library.Show("Steven Universe", 2013);

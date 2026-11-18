@@ -542,21 +542,61 @@ export default function (view) {
         box.innerHTML = groups.map((g) => `
             <h3>${esc(g.Group)}</h3>
             <ul class="wo-list">${g.Orders.map(readyMadeRow).join('')}</ul>`).join('');
+        pollReadyMade(groups);
+    }
+
+    /** How much of a ready-made order is in the library, or that it's still being checked. */
+    function readyLibrary(o) {
+        if (o.Checking) {
+            return `<span data-ready-lib="${esc(o.Id)}"> · <span class="wo-status wo-pending">Checking your library…</span></span>`;
+        }
+        const text = !o.ItemCount ? ''
+            : o.InLibrary === 0 ? '<span class="wo-status wo-missing">None in your library</span>'
+            : o.InLibrary >= o.ItemCount ? '<span class="wo-status wo-ok">All in your library</span>'
+            : `<span class="wo-status wo-title">${o.InLibrary} of ${o.ItemCount} in your library</span>`;
+        return `<span data-ready-lib="${esc(o.Id)}" data-done>${text ? ` · ${text}` : ''}</span>`;
+    }
+
+    let readyPoll = 0;
+
+    /**
+     * The server checks the ready-made orders against the library in the background the first time they're asked for,
+     * so the list shows at once. Until it's done, ask again every few seconds and fill in each line as it's ready.
+     */
+    function pollReadyMade(groups, attempt = 0) {
+        clearTimeout(readyPoll);
+        if (!groups.some((g) => g.Orders.some((o) => o.Checking)) || attempt > 200) {
+            return;
+        }
+        readyPoll = setTimeout(async () => {
+            if (!view.isConnected) {
+                return;
+            }
+            let fresh;
+            try {
+                fresh = await getJson('WatchOrder/ReadyMade');
+            } catch {
+                pollReadyMade(groups, attempt + 1);
+                return;
+            }
+            for (const o of fresh.flatMap((g) => g.Orders)) {
+                const line = view.querySelector(`[data-ready-lib="${CSS.escape(o.Id)}"]:not([data-done])`);
+                if (line) {
+                    line.outerHTML = readyLibrary(o);
+                }
+            }
+            pollReadyMade(fresh, attempt + 1);
+        }, Math.min(1500 + attempt * 250, 5000));
     }
 
     function readyMadeRow(o) {
         const state = READY_STATE[o.State] || READY_STATE.NotAdded;
-        const library = o.ItemCount
-            ? (o.InLibrary === 0 ? '<span class="wo-status wo-missing">None in your library</span>'
-                : o.InLibrary >= o.ItemCount ? '<span class="wo-status wo-ok">All in your library</span>'
-                : `<span class="wo-status wo-title">${o.InLibrary} of ${o.ItemCount} in your library</span>`)
-            : '';
         const version = o.State === 'UpdateAvailable' || o.State === 'EditedUpdateAvailable'
             ? ` · version ${o.AddedVersion} → ${o.Version}` : '';
         return `<li data-search="">
             <div class="wo-meta">
                 <div class="wo-name">${esc(o.Name)}${state.text ? `<span class="wo-tag${o.State.includes('Update') ? ' wo-tag-update' : ''}">${esc(state.text)}</span>` : ''}</div>
-                <div class="wo-sub">${o.EntryCount} entr${o.EntryCount === 1 ? 'y' : 'ies'} · ${library}${version}</div>
+                <div class="wo-sub">${o.EntryCount} entr${o.EntryCount === 1 ? 'y' : 'ies'}${readyLibrary(o)}${version}</div>
                 ${o.Description ? `<div class="wo-sub wo-desc" title="${esc(o.Description)}">${esc(o.Description)}</div>` : ''}
             </div>
             ${state.button ? `<button is="emby-button" type="button" class="raised ${state.cls || ''}" data-ready="${esc(o.Id)}" data-state="${esc(o.State)}" data-name="${esc(o.Name)}"><span>${state.button}</span></button>` : ''}

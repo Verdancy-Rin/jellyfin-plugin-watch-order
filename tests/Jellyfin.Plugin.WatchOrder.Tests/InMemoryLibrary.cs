@@ -84,12 +84,17 @@ internal sealed class InMemoryLibrary : ILibraryLookup
         return Of(kind).Where(i => Clean(i.Name) == clean).ToList();
     }
 
-    public IReadOnlyList<BaseItem> FindEpisodes(Guid seriesId, int season, int? episode)
-        => _items.OfType<Episode>()
-            .Where(e => e.SeriesId == seriesId && e.ParentIndexNumber == season && (episode is null || e.IndexNumber == episode) && !e.IsVirtualItem)
+    public int EpisodeLookups { get; private set; }
+
+    public IReadOnlyList<BaseItem> FindEpisodes(BaseItem series)
+    {
+        EpisodeLookups++;
+        return _items.OfType<Episode>()
+            .Where(e => e.SeriesId == series.Id && !e.IsVirtualItem)
             .Reverse() // Jellyfin doesn't promise an order; the resolver sorts them
             .Cast<BaseItem>()
             .ToList();
+    }
 
     // Jellyfin's StringExtensions.GetCleanValue: no accents, lower case, punctuation as spaces, spaces collapsed.
     internal static string Clean(string value)

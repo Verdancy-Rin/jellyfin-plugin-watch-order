@@ -42,8 +42,10 @@ public class WatchOrderResolver
             ResolvedAtUtc = DateTime.UtcNow
         };
 
-        // Series are often referenced many times in one order; look each one up once.
+        // Series are often referenced many times in one order; look each one up once, and fetch each one's episodes
+        // once too (a long anime order can name hundreds of episodes of the same series).
         var seriesCache = new Dictionary<string, (BaseItem? Item, MatchStatus Status)>(StringComparer.OrdinalIgnoreCase);
+        var episodeCache = new Dictionary<Guid, List<BaseItem>>();
 
         // Which series each step belongs to (the library's series id when it's there, else the order's name), for
         // making sections automatically; null for films.
@@ -74,7 +76,7 @@ public class WatchOrderResolver
                 case WatchOrderEntryType.Episode:
                 {
                     var (series, status) = FindSeries(step, allowTitle, seriesCache);
-                    var episode = series is null ? null : FindEpisodes(series, step.Season!.Value, step.Episode).FirstOrDefault();
+                    var episode = series is null ? null : FindEpisodes(series, step.Season!.Value, step.Episode, episodeCache).FirstOrDefault();
                     Add(resolved, step, step.Label, episode, episode is null ? MatchStatus.Missing : status, optional);
                     break;
                 }
@@ -82,7 +84,7 @@ public class WatchOrderResolver
                 case WatchOrderEntryType.Season:
                 {
                     var (series, status) = FindSeries(step, allowTitle, seriesCache);
-                    var episodes = series is null ? new List<BaseItem>() : FindEpisodes(series, step.Season!.Value, null);
+                    var episodes = series is null ? new List<BaseItem>() : FindEpisodes(series, step.Season!.Value, null, episodeCache);
 
                     if (episodes.Count == 0)
                     {
@@ -305,9 +307,16 @@ public class WatchOrderResolver
         return (null, MatchStatus.Missing);
     }
 
-    private List<BaseItem> FindEpisodes(BaseItem series, int season, int? episode)
+    private List<BaseItem> FindEpisodes(BaseItem series, int season, int? episode, Dictionary<Guid, List<BaseItem>> cache)
     {
-        return _library.FindEpisodes(series.Id, season, episode)
+        if (!cache.TryGetValue(series.Id, out var all))
+        {
+            all = _library.FindEpisodes(series).ToList();
+            cache[series.Id] = all;
+        }
+
+        return all
+            .Where(e => e.ParentIndexNumber == season && (episode is null || e.IndexNumber == episode))
             .OrderBy(e => e.IndexNumber ?? int.MaxValue)
             .ToList();
     }

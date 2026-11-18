@@ -1,5 +1,7 @@
 using Jellyfin.Data.Enums;
+using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 
 namespace Jellyfin.Plugin.WatchOrder.Services;
@@ -25,12 +27,14 @@ public interface ILibraryLookup
     /// <returns>Matching items.</returns>
     IReadOnlyList<BaseItem> FindByName(BaseItemKind kind, string name);
 
-    /// <summary>Finds a series' episodes that are in the library (not missing ones) in a season, or one episode.</summary>
-    /// <param name="seriesId">The series.</param>
-    /// <param name="season">The season number (0 for specials).</param>
-    /// <param name="episode">One episode number, or null for the whole season.</param>
+    /// <summary>
+    /// Finds every episode of a series that's in the library (not missing ones), in all its seasons. The resolver
+    /// asks once per series and picks seasons and episodes out of the result, because one query per episode is far
+    /// too slow on a big library.
+    /// </summary>
+    /// <param name="series">The series.</param>
     /// <returns>The episodes, in any order.</returns>
-    IReadOnlyList<BaseItem> FindEpisodes(Guid seriesId, int season, int? episode);
+    IReadOnlyList<BaseItem> FindEpisodes(BaseItem series);
 }
 
 /// <summary>The resolver's lookups against Jellyfin's library.</summary>
@@ -38,6 +42,8 @@ public class JellyfinLibraryLookup : ILibraryLookup
 {
     private readonly ILibraryManager _libraryManager;
 
+    /// <summary>Initializes a new instance of the <see cref="JellyfinLibraryLookup"/> class.</summary>
+    /// <param name="libraryManager">The library manager.</param>
     public JellyfinLibraryLookup(ILibraryManager libraryManager)
     {
         _libraryManager = libraryManager;
@@ -49,7 +55,8 @@ public class JellyfinLibraryLookup : ILibraryLookup
         {
             IncludeItemTypes = new[] { kind },
             Recursive = true,
-            HasAnyProviderId = providerIds.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase)
+            HasAnyProviderId = providerIds.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase),
+            DtoOptions = Bare()
         });
 
     /// <inheritdoc />
@@ -58,26 +65,48 @@ public class JellyfinLibraryLookup : ILibraryLookup
         {
             IncludeItemTypes = new[] { kind },
             Recursive = true,
-            Name = name
+            Name = name,
+            DtoOptions = Bare()
         });
 
     /// <inheritdoc />
-    public IReadOnlyList<BaseItem> FindEpisodes(Guid seriesId, int season, int? episode)
+    public IReadOnlyList<BaseItem> FindEpisodes(BaseItem series)
     {
-        var query = new InternalItemsQuery
+        // By the series' key, as Jellyfin's own series pages do: there's an index for it, unlike "under this series",
+        // which reads through every episode in the library.
+        var key = series.GetPresentationUniqueKey();
+        if (!string.IsNullOrEmpty(key))
         {
-            IncludeItemTypes = new[] { BaseItemKind.Episode },
-            AncestorIds = new[] { seriesId },
-            Recursive = true,
-            ParentIndexNumber = season,
-            IsVirtualItem = false
-        };
+            var byKey = _libraryManager.GetItemList(new InternalItemsQuery
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Episode },
+                SeriesPresentationUniqueKey = key,
+                IsVirtualItem = false,
+                DtoOptions = Bare()
+            });
 
-        if (episode is not null)
-        {
-            query.IndexNumber = episode;
+            // Series in different libraries can share a key; keep this one's episodes when they say which they're in.
+            var own = byKey.Where(e => e is not Episode ep || ep.SeriesId == Guid.Empty || ep.SeriesId == series.Id).ToList();
+            if (own.Count > 0)
+            {
+                return own;
+            }
         }
 
-        return _libraryManager.GetItemList(query);
+        // No key, or nothing found by it (an older database, say): everything under the series, in one query.
+        return _libraryManager.GetItemList(new InternalItemsQuery
+        {
+            IncludeItemTypes = new[] { BaseItemKind.Episode },
+            AncestorIds = new[] { series.Id },
+            Recursive = true,
+            IsVirtualItem = false,
+            DtoOptions = Bare()
+        });
     }
+
+    /// <summary>
+    /// Just the items' own fields. Matching only needs ids, names, years and episode numbers; by default Jellyfin also
+    /// loads images, provider ids, settings and every user's watched data for each item, which is most of the work.
+    /// </summary>
+    private static DtoOptions Bare() => new(false);
 }
