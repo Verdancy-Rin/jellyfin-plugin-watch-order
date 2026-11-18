@@ -62,19 +62,31 @@ internal sealed class InMemoryLibrary : ILibraryLookup
         return added;
     }
 
-    public IReadOnlyList<BaseItem> FindByProviderIds(BaseItemKind kind, IReadOnlyDictionary<string, string> providerIds)
+    public int FilmLookups { get; private set; }
+
+    public string[] LastFilmPairs { get; private set; } = Array.Empty<string>();
+
+    public int NameLookups { get; private set; }
+
+    public IReadOnlyList<BaseItem> FindByProviderIds(BaseItemKind kind, IReadOnlyCollection<KeyValuePair<string, string>> providerIds)
     {
         if (kind == BaseItemKind.Series)
         {
             SeriesLookups++;
         }
+        else
+        {
+            FilmLookups++;
+            LastFilmPairs = providerIds.Select(p => $"{p.Key}={p.Value}").ToArray();
+        }
 
-        // Any one (provider, value) pair matching is enough, as in Jellyfin's HasAnyProviderId.
-        return Of(kind).Where(i => providerIds.Any(p => i.ProviderIds.Any(own => own.Key == p.Key && own.Value == p.Value))).ToList();
+        // Any one (provider, value) pair matching is enough, as in Jellyfin's HasAnyProviderIds.
+        return Of(kind).Where(i => providerIds.Any(p => i.ProviderIds.Any(own => own.Key == p.Key && own.Value == p.Value))).Reverse().ToList();
     }
 
     public IReadOnlyList<BaseItem> FindByName(BaseItemKind kind, string name)
     {
+        NameLookups++;
         if (kind == BaseItemKind.Series)
         {
             SeriesLookups++;

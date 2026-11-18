@@ -149,6 +149,15 @@ public class ReadyMadeOrders
     {
         var timer = Stopwatch.StartNew();
         var checkedCount = 0;
+        try
+        {
+            _orders.Prefetch(_groups.SelectMany(g => g.Orders)); // every bundled order's films and series in one go
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Couldn't look up the ready-made orders' films and series together; checking them one by one");
+        }
+
         foreach (var bundled in _groups.SelectMany(g => g.Orders))
         {
             if (Volatile.Read(ref _generation) != generation)

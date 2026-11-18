@@ -16,7 +16,7 @@ public class PluginServiceRegistrator : IPluginServiceRegistrator
     public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
     {
         serviceCollection.AddSingleton<WatchOrderStore>();
-        serviceCollection.AddSingleton<ILibraryLookup, JellyfinLibraryLookup>();
+        serviceCollection.AddSingleton<ILibraryLookup, CachedLibraryLookup>();
         serviceCollection.AddSingleton<WatchOrderResolver>();
         serviceCollection.AddSingleton<WatchOrderService>();
         serviceCollection.AddSingleton<WatchOrderProgressService>();

@@ -1,5 +1,7 @@
 using Jellyfin.Plugin.WatchOrder.Models;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.WatchOrder.Services;
 
@@ -14,9 +16,11 @@ public class WatchOrderProgressService
     private readonly IUserDataManager _userDataManager;
     private readonly ILibraryManager _libraryManager;
     private readonly UserStateStore _userState;
+    private readonly ILogger<WatchOrderProgressService>? _logger;
 
-    public WatchOrderProgressService(IUserManager userManager, IUserDataManager userDataManager, ILibraryManager libraryManager, UserStateStore userState)
+    public WatchOrderProgressService(IUserManager userManager, IUserDataManager userDataManager, ILibraryManager libraryManager, UserStateStore userState, ILogger<WatchOrderProgressService>? logger = null)
     {
+        _logger = logger;
         _userManager = userManager;
         _userDataManager = userDataManager;
         _libraryManager = libraryManager;
@@ -29,7 +33,17 @@ public class WatchOrderProgressService
     /// <param name="order">The resolved order.</param>
     /// <param name="userId">The user id.</param>
     /// <returns>The progress, or null when the user doesn't exist.</returns>
-    public UserProgress? GetProgress(ResolvedWatchOrder order, Guid userId)
+    public UserProgress? GetProgress(ResolvedWatchOrder order, Guid userId) => GetProgress(order, userId, null);
+
+    /// <summary>
+    /// Builds one user's progress through an order, in their current run, from items already loaded with
+    /// <see cref="ItemBatch"/> (for working out several users' progress, or using the items again afterwards).
+    /// </summary>
+    /// <param name="order">The resolved order.</param>
+    /// <param name="userId">The user id.</param>
+    /// <param name="items">The order's items, or null to load them.</param>
+    /// <returns>The progress, or null when the user doesn't exist.</returns>
+    public UserProgress? GetProgress(ResolvedWatchOrder order, Guid userId, IReadOnlyDictionary<Guid, BaseItem>? items)
     {
         var user = _userManager.GetUserById(userId);
         if (user is null)
@@ -50,11 +64,12 @@ public class WatchOrderProgressService
             OptionalMode = mode
         };
 
+        items ??= ItemBatch.ForSteps(_libraryManager, order.Steps, _logger);
         foreach (var step in order.Steps)
         {
             var played = false;
             var available = false;
-            if (step.ItemId is { } itemId && _libraryManager.GetItemById(itemId) is { } item)
+            if (step.ItemId is { } itemId && items.TryGetValue(itemId, out var item))
             {
                 // Respect library access: users only see items they're allowed to see.
                 if (!item.IsVisible(user))
@@ -117,9 +132,10 @@ public class WatchOrderProgressService
             return result;
         }
 
+        var items = ItemBatch.ForSteps(_libraryManager, order.Steps, _logger);
         foreach (var step in order.Steps)
         {
-            if (step.ItemId is { } itemId && _libraryManager.GetItemById(itemId) is { } item)
+            if (step.ItemId is { } itemId && items.TryGetValue(itemId, out var item))
             {
                 result[itemId.ToString("N")] = _userDataManager.GetUserData(user, item)?.Played ?? false;
             }

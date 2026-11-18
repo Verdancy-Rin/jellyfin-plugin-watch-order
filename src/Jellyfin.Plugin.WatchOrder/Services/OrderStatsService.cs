@@ -49,9 +49,10 @@ public class OrderStatsService
             }
 
             var stats = new OrderStats { OrderId = order.Id, Name = order.Name };
+            var items = ItemBatch.ForSteps(_libraryManager, order.Steps); // once for every user
             foreach (var user in users)
             {
-                if (_progress.GetProgress(order, user.Id) is not { } progress)
+                if (_progress.GetProgress(order, user.Id, items) is not { } progress)
                 {
                     continue;
                 }
@@ -66,7 +67,7 @@ public class OrderStatsService
                 DateTime? lastWatched = null;
                 foreach (var step in progress.Steps)
                 {
-                    if (step.Step.ItemId is { } id && step.Available && _libraryManager.GetItemById(id) is { } item
+                    if (step.Step.ItemId is { } id && step.Available && items.TryGetValue(id, out var item)
                         && _userDataManager.GetUserData(user, item)?.LastPlayedDate is { } played && (lastWatched is null || played > lastWatched))
                     {
                         lastWatched = played;

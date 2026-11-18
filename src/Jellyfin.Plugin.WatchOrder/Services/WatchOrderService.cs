@@ -54,13 +54,24 @@ public class WatchOrderService
     /// <returns>The resolved draft.</returns>
     public ResolvedWatchOrder Preview(WatchOrderDefinition definition) => _resolver.Resolve(definition);
 
+    /// <summary>Looks up the films and series of several orders in one go, so resolving each of them is quick.</summary>
+    /// <param name="definitions">The orders.</param>
+    public void Prefetch(IEnumerable<WatchOrderDefinition> definitions) => _resolver.Prefetch(definitions);
+
     /// <summary>Saves an order and resolves it immediately.</summary>
     /// <param name="definition">A validated definition.</param>
     /// <returns>The resolved order.</returns>
     public ResolvedWatchOrder Save(WatchOrderDefinition definition)
     {
         _store.Save(definition);
+        var timer = System.Diagnostics.Stopwatch.StartNew();
         var resolved = _cache[definition.Id] = _resolver.Resolve(definition);
+        _logger.LogInformation(
+            "Matched {Order}: {Found} of {Steps} films and episodes are in the library ({Seconds:0.0} s)",
+            definition.Name,
+            resolved.Steps.Count(s => s.ItemId is not null),
+            resolved.Steps.Count,
+            timer.Elapsed.TotalSeconds);
         OrdersChanged?.Invoke(this, definition.Id);
         return resolved;
     }
@@ -83,9 +94,13 @@ public class WatchOrderService
     /// <param name="cancellationToken">Cancellation token.</param>
     public void RefreshAll(IProgress<double>? progress = null, CancellationToken cancellationToken = default)
     {
+        var timer = System.Diagnostics.Stopwatch.StartNew();
         var defs = _store.GetAll();
-        _cache.Clear();
 
+        // Every order's films and series in one go, rather than a query per order.
+        _resolver.Prefetch(defs);
+
+        // Each order is replaced as it's re-matched, so pages keep showing the old matches meanwhile.
         for (var i = 0; i < defs.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -95,7 +110,13 @@ public class WatchOrderService
             progress?.Report(100.0 * (i + 1) / defs.Count);
         }
 
-        _logger.LogInformation("Refreshed {Count} watch orders", defs.Count);
+        var current = defs.Select(d => d.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var gone in _cache.Keys.Where(id => !current.Contains(id)).ToList())
+        {
+            _cache.TryRemove(gone, out _);
+        }
+
+        _logger.LogInformation("Refreshed {Count} watch orders in {Seconds:0.0} s", defs.Count, timer.Elapsed.TotalSeconds);
         OrdersChanged?.Invoke(this, null);
     }
 }

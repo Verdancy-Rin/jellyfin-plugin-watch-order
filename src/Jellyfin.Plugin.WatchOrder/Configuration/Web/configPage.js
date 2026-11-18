@@ -1292,7 +1292,32 @@ export default function (view) {
         previewTimer = setTimeout(runPreview, delay);
     }
 
+    let previewBusy = false;
+    let previewQueued = false;
+
+    /**
+     * Checks the draft against the library. One request at a time: on a big library a check can take a while, and
+     * starting another for every change would only make the server slower. Changes made meanwhile are checked once
+     * the current one is back.
+     */
     async function runPreview() {
+        if (previewBusy) {
+            previewQueued = true;
+            return;
+        }
+        previewBusy = true;
+        try {
+            await previewOnce();
+        } finally {
+            previewBusy = false;
+            if (previewQueued && draft) {
+                previewQueued = false;
+                runPreview();
+            }
+        }
+    }
+
+    async function previewOnce() {
         const seq = ++previewSeq;
         const sent = draft.entries.slice();
         try {
