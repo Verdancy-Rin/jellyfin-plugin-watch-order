@@ -777,17 +777,12 @@ export default function (view) {
             </section>`).join('')}
             <p class="wo-muted" id="woReadyNone" hidden>No ready-made orders match that search.</p>`;
         applyReadyFilter();
+        pollReadyMade(groups);
     }
 
     function readyMadeCard(o) {
         const state = READY_STATE[o.State] || READY_STATE.NotAdded;
-        let library = '';
-        if (o.ItemCount) {
-            const [dot, text] = o.InLibrary === 0 ? ['var(--wo-bad)', 'None in your library']
-                : o.InLibrary >= o.ItemCount ? ['var(--wo-ok)', 'All in your library']
-                : ['var(--wo-warn)', `${o.InLibrary} of ${o.ItemCount} in your library`];
-            library = `<div class="wo-rm-lib" style="--wo-dot:${dot}">${text}</div>`;
-        }
+        const library = readyLibrary(o);
         const update = o.State === 'UpdateAvailable' || o.State === 'EditedUpdateAvailable';
         const version = update ? ` · version ${o.AddedVersion} → ${o.Version}` : '';
         let tag = '';
@@ -813,6 +808,55 @@ export default function (view) {
                 <div class="wo-rm-foot">${tag}${button}</div>
             </div>
         </li>`;
+    }
+
+    /** How much of a ready-made order is in the library, or that it's still being checked. */
+    function readyLibrary(o) {
+        if (o.Checking) {
+            return `<div class="wo-rm-lib wo-rm-checking" data-ready-lib="${esc(o.Id)}">Checking your library…</div>`;
+        }
+        if (!o.ItemCount) {
+            return `<div data-ready-lib="${esc(o.Id)}" hidden></div>`;
+        }
+        const [dot, text] = o.InLibrary === 0 ? ['var(--wo-bad)', 'None in your library']
+            : o.InLibrary >= o.ItemCount ? ['var(--wo-ok)', 'All in your library']
+            : ['var(--wo-warn)', `${o.InLibrary} of ${o.ItemCount} in your library`];
+        return `<div class="wo-rm-lib" data-ready-lib="${esc(o.Id)}" style="--wo-dot:${dot}">${text}</div>`;
+    }
+
+    let readyPoll = 0;
+
+    /**
+     * The server checks the ready-made orders against the library in the background the first time they're asked for,
+     * so the list shows at once. Until it's done, ask again every few seconds and fill in each card's line as it's ready.
+     */
+    function pollReadyMade(groups, attempt = 0) {
+        clearTimeout(readyPoll);
+        if (!groups.some((g) => g.Orders.some((o) => o.Checking)) || attempt > 200) {
+            return;
+        }
+        readyPoll = setTimeout(async () => {
+            if (!view.isConnected) {
+                return;
+            }
+            let fresh;
+            try {
+                fresh = await getJson('WatchOrder/ReadyMade');
+            } catch {
+                pollReadyMade(groups, attempt + 1);
+                return;
+            }
+            for (const o of fresh.flatMap((g) => g.Orders)) {
+                const line = view.querySelector(`[data-ready-lib="${CSS.escape(o.Id)}"]`);
+                if (line && !line.hasAttribute('data-done')) {
+                    line.outerHTML = readyLibrary(o);
+                    if (!o.Checking) {
+                        view.querySelector(`[data-ready-lib="${CSS.escape(o.Id)}"]`)?.setAttribute('data-done', '');
+                    }
+                }
+            }
+            pollReadyMade(fresh, attempt + 1);
+        }, Math.min(1500 + attempt * 250, 5000));
     }
 
     function applyReadyFilter() {

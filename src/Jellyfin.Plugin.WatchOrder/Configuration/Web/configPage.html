@@ -214,6 +214,11 @@
             .wo-rm-meta { font-size: .85em; color: var(--wo-text2); }
             .wo-rm-lib { font-size: .85em; display: flex; align-items: center; gap: .45em; }
             .wo-rm-lib::before { content: ""; width: .55em; height: .55em; border-radius: 50%; background: var(--wo-dot, var(--wo-ok)); flex: none; }
+            .wo-rm-checking { color: var(--wo-text2); }
+            .wo-rm-checking::before { background: none; border: 2px solid currentColor; border-right-color: transparent; width: .6em; height: .6em; box-sizing: border-box;
+              animation: wo-spin 1s linear infinite; }
+            @keyframes wo-spin { to { transform: rotate(360deg); } }
+            @media (prefers-reduced-motion: reduce) { .wo-rm-checking::before { animation: none; } }
             .wo-rm-desc { font-size: .85em; color: var(--wo-text2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
             .wo-rm-foot { margin-top: auto; padding-top: .5em; display: flex; flex-wrap: wrap; align-items: center; gap: .4em; }
             .wo-rm-foot .emby-button { min-height: 2.4em; }
