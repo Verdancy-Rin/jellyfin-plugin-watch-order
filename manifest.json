@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/Verdancy-Rin/jellyfin-plugin-watch-order/main/images/watch-order.png",
     "versions": [
       {
+        "version": "1.2.2.0",
+        "changelog": "- Fixed: on big libraries, the order editor could take a very long time to show which entries are in your library, with Jellyfin reading the disk heavily. An order's films and series are now looked up in one go rather than one at a time, lookups no longer load images or watch history, and results are remembered until the library changes, so later checks, saving and re-matching are almost instant.\n- Faster with long orders such as Naruto and Boruto: working out progress (the Watch Orders page, the home screen row, item pages, autoplay, playlists and the dashboard's viewer stats) now loads an order's items in a few queries rather than one at a time, and series and season pages no longer load every episode of every order to find the orders they're in.\n- The order editor checks one change at a time against your library, rather than starting a new check for every edit. Re-matching after library changes keeps showing the previous matches until it's done.\n- Clearer logs: saving an order logs how much of it is in your library, re-matching and the ready-made list log how long they took, and any library lookup that takes more than a few seconds is logged as a warning saying what it was doing, so slowness is easy to report.\n",
+        "targetAbi": "12.1.0.0",
+        "sourceUrl": "https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/releases/download/v1.2.2.0/watch-order_1.2.2.0.zip",
+        "checksum": "38d03042d65351fb7f01e4ace5dc4f00",
+        "timestamp": "2026-11-18T14:45:46Z"
+      },
+      {
         "version": "1.2.1.0",
         "changelog": "- Fixed: Ready-made orders could stay on \"Loading…\" for good on big libraries, with Jellyfin reading the disk flat out. The list now shows straight away and fills in how much of each order is in your library as it's checked.\n- Faster matching: an order's episodes are now fetched once per series rather than one at a time, and only the details matching needs are loaded. Long orders such as Naruto and Boruto are matched in a fraction of the time, which also speeds up re-matching after library changes.\n",
         "targetAbi": "12.1.0.0",
