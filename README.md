@@ -25,11 +25,14 @@ Watch films and episodes from across a franchise in one defined order: Star Wars
 ![The Part of these watch orders section on a film's page, with Continue where you left off and Play from the start](images/screenshots/item-page.png)
 *On a film's page: the orders it's in, where, and what comes next.*
 
-![The order builder in the Dashboard: the order's details, its image, its sections, and the list of entries](images/screenshots/order-builder.png)
-*Building an order in the Dashboard, with its image and sections.*
+![The Dashboard's Orders area: totals for orders, users watching, missing items and updates, then each order with its artwork, how much is in the library, and its viewers](images/screenshots/dashboard-orders.png)
+*The Dashboard page for admins: every order at a glance, with how much of it is in the library and who's watching.*
 
-![Ready-made orders in the Dashboard, with how much of each is in the library](images/screenshots/ready-made-orders.png)
-*Ready-made orders, ready to add.*
+![The order editor in the Dashboard: the order's details and artwork, then its entries grouped into sections, with Find and Jump to](images/screenshots/order-builder.png)
+*Editing an order, with its artwork, sections, and a check of each entry against the library.*
+
+![Add orders in the Dashboard: create a new order, import from a file, link or paste, and ready-made orders with how much of each is in the library](images/screenshots/ready-made-orders.png)
+*Add orders: start a new one, import one, or pick from the ready-made orders.*
 
 These screenshots are from a server using the [ElegantFin](https://github.com/lscambo13/ElegantFin) theme. Watch Order is built from Jellyfin's own components, so it takes on whatever theme your server uses.
 
