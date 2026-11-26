@@ -1,7 +1,7 @@
 ---
 name: "Watch Order"
 guid: "760c9732-e114-481f-b6c9-5a2a169111c1"
-version: "1.2.2.0"
+version: "1.3.0.0"
 targetAbi: "12.1.0.0"
 framework: "net10.0"
 owner: "Verdancy-Rin"
@@ -16,7 +16,10 @@ imageUrl: "https://raw.githubusercontent.com/Verdancy-Rin/jellyfin-plugin-watch-
 artifacts:
   - "Jellyfin.Plugin.WatchOrder.dll"
 changelog: |
-  - Fixed: on big libraries, the order editor could take a very long time to show which entries are in your library, with Jellyfin reading the disk heavily. An order's films and series are now looked up in one go rather than one at a time, lookups no longer load images or watch history, and results are remembered until the library changes, so later checks, saving and re-matching are almost instant.
-  - Faster with long orders such as Naruto and Boruto: working out progress (the Watch Orders page, the home screen row, item pages, autoplay, playlists and the dashboard's viewer stats) now loads an order's items in a few queries rather than one at a time, and series and season pages no longer load every episode of every order to find the orders they're in.
-  - The order editor checks one change at a time against your library, rather than starting a new check for every edit. Re-matching after library changes keeps showing the previous matches until it's done.
-  - Clearer logs: saving an order logs how much of it is in your library, re-matching and the ready-made list log how long they took, and any library lookup that takes more than a few seconds is logged as a warning saying what it was doing, so slowness is easy to report.
+  - New: a redesigned Dashboard page. A side menu splits it into Orders, Add orders and Settings, and it remembers where you were.
+  - Orders opens with totals at a glance (orders, people watching, missing items, updates available), then each order with its artwork, its size, a bar of how much of it is in your library, and who's watching. Each order's menu can update it, open it in the web app, export it or delete it, and a filter appears once you have a few orders.
+  - Add orders puts New order, Import (drop a file, paste a link or the file itself) and Ready-made orders in one place. Ready-made orders can be filtered and searched.
+  - Settings are grouped into panels, with options that depend on another greyed out until it's on, a preview of where the Watch Orders button goes, and a save bar with Discard.
+  - The order editor has a clearer header and save bar that shows when you have unsaved changes, a preview of the order's artwork, Find for long orders, Jump to for sections, and Export that includes unsaved changes. Leaving with unsaved changes asks first.
+  - The page header shows the plugin's version, whether the web app pages are working, and a notice with the repository to add if File Transformation is missing.
+  - A new plugin image.

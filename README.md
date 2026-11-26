@@ -1,5 +1,12 @@
 # Watch Order for Jellyfin
 
+[![CI](https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/Verdancy-Rin/jellyfin-plugin-watch-order?label=release)](https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/releases/latest)
+[![Jellyfin](https://img.shields.io/badge/Jellyfin-12.1%20%E2%80%93%2012.4-00A4DC?logo=jellyfin&logoColor=white)](https://jellyfin.org)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com)
+[![License](https://img.shields.io/github/license/Verdancy-Rin/jellyfin-plugin-watch-order)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/Verdancy-Rin/jellyfin-plugin-watch-order/total)](https://github.com/Verdancy-Rin/jellyfin-plugin-watch-order/releases)
+
 ![Watch Order](images/watch-order.png)
 
 Watch films and episodes from across a franchise in one defined order: Star Wars with The Clone Wars woven in, the MCU in story order, Arrowverse crossovers. Each user's progress follows their normal Jellyfin played status, so they always know what's next.
@@ -32,6 +39,7 @@ These screenshots are from a server using the [ElegantFin](https://github.com/ls
 - **"Up Next in Your Watch Orders" on the home screen**, just after Continue Watching: the next item in each order you're following, on Jellyfin's own cards (same as Next Up, with the watched, favourite and ⋯ buttons), plus the order's progress. Play starts it and queues the rest of the order. It's opt-in: an order appears once you add it, play from it on the Watch Orders page, or choose how to count what you'd already watched. Having watched some of it elsewhere isn't enough. Each user can add or remove orders themselves.
 - **Built for long orders.** An order's page opens with a backdrop header and an Up next card, then the order as a timeline that fills in as you watch. Sections ("Phase One", "Naruto Shippuden") fold away and the page opens at the one you're up to; a run of episodes from one season is a single row that opens to its episodes; films sit between seasons where they belong. **Jump to Up next** and search find your place in an order of hundreds of episodes. Orders that are a few long runs of different series get sections on their own.
 - **Order artwork.** Each order can choose its image: the backdrop of a film or show in your library, a picture from the web (the server keeps its own copy, so the link can't go dead), or one uploaded in the Dashboard. Without one, the first item's backdrop is used; once someone starts an order, their tile shows what's up next.
+- **A Dashboard page that's easy to run.** A side menu splits it into **Orders**, **Add orders** and **Settings**. Orders opens with totals at a glance (orders, people watching, missing items, updates available), then each order with its artwork, how much of it is in your library and who's watching, and a menu to update, export, open or delete it.
 - **Visual order builder** in the Dashboard. Add films and episodes from your library, search TMDb/TVDb for titles you don't have yet, start from an existing collection, then drag to reorder. Add section headings and choose the order's image. Each entry shows live whether it's in your library.
 - **Mixed orders.** Films, single episodes, episode ranges and whole seasons from any number of series, in one list.
 - **Library matching.** Matches by TMDb/IMDb/TVDb ids first, then by title and year, and shows exactly which items are missing.
@@ -51,7 +59,7 @@ These screenshots are from a server using the [ElegantFin](https://github.com/ls
 1. Dashboard → Plugins → Repositories → **+**, then add:
    `https://raw.githubusercontent.com/Verdancy-Rin/jellyfin-plugin-watch-order/main/manifest.json`
 2. Catalog → **Watch Order** → Install, then restart Jellyfin.
-3. Dashboard → **Watch Order** → add one from **Ready-made orders**, **New order** to build your own, or **Import** a file or link.
+3. Dashboard → **Watch Order** → **Add orders**: build a **New order**, **Import** a file or link, or pick from the **Ready-made orders**.
 4. *(Recommended)* For the Watch Orders page, the home screen row and the section on item pages in the web app, add the repository `https://www.iamparadox.dev/jellyfin/plugins/manifest.json`, install **File Transformation**, and restart Jellyfin. Users then see **Watch Orders** in the web app's library bar (they may need to refresh the page once). Without it, orders still work through their playlists, autoplay and the API.
 
 **Requires Jellyfin 12.1 or later.** Tested on Jellyfin 12.1, 12.2, 12.3 and 12.4.
@@ -74,12 +82,17 @@ These screenshots are from a server using the [ElegantFin](https://github.com/ls
 │   ├── Services/
 │   │   ├── WatchOrderStore.cs         Reads and writes order files on disk
 │   │   ├── WatchOrderResolver.cs      Matches entries to library items
-│   │   ├── LibraryLookup.cs           The three library lookups the resolver makes (swapped for an in-memory library in tests)
+│   │   ├── LibraryLookup.cs           The library lookups the resolver makes, remembered until the library changes (swapped for an in-memory library in tests)
+│   │   ├── ItemBatch.cs               Loads an order's items and watched data in a few queries
 │   │   ├── WatchOrderService.cs       In-memory cache of resolved orders
 │   │   ├── WatchOrderProgressService.cs  Per-user played state and "next" item
 │   │   ├── LibraryChangeListener.cs   Debounced re-match on library changes
+│   │   ├── ReadyMadeOrders.cs         The orders bundled with the plugin, and how much of each is in the library
+│   │   ├── OrderStatsService.cs       Viewer stats for the Dashboard
+│   │   ├── AutoplayFollower.cs        Queues the order's next item when something in it starts
 │   │   ├── PlaylistSync.cs            Keeps each user's playlist of what's left
-│   │   └── UserStateStore.cs          Per-user choices, watch-throughs and playlists (one JSON file per user)
+│   │   ├── UserStateStore.cs          Per-user choices, watch-throughs and playlists (one JSON file per user)
+│   │   └── SlowLog.cs                 Times library work and logs a warning when it's slow
 │   ├── ScheduledTasks/
 │   │   └── RefreshWatchOrdersTask.cs  Daily re-match (Dashboard → Scheduled Tasks)
 │   └── WebClient/
@@ -88,7 +101,7 @@ These screenshots are from a server using the [ElegantFin](https://github.com/ls
 │       └── FileTransformationRegistrar.cs  Registers the injector with File Transformation at startup
 ├── tests/Jellyfin.Plugin.WatchOrder.Tests/   xUnit tests (matching, progress, autoplay, playlists, stats, format); also validates every file in orders/
 ├── orders/                            Shareable order files (examples/ to start)
-├── images/watch-order.{png,svg}    Plugin image for the Dashboard (SVG source uses the Inter font)
+├── images/watch-order.{png,svg}       Plugin image for the catalogue (the SVG's text is outlined, so it needs no fonts)
 ├── schema/watch-order.schema.json     JSON Schema for editor autocomplete
 ├── docs/order-format.md               Order file reference
 ├── build.yaml                         Plugin metadata (jprm-compatible)
@@ -150,13 +163,13 @@ dotnet test
 ```
 
 Needs the .NET 10 SDK. To try it on a server, copy `src/Jellyfin.Plugin.WatchOrder/bin/Release/net10.0/Jellyfin.Plugin.WatchOrder.dll` into
-`<jellyfin config>/plugins/WatchOrder_1.1.0.0/` and restart Jellyfin.
+the plugin's folder in `<jellyfin config>/plugins/` (named `Watch Order_` and the installed version) and restart Jellyfin.
 
 The resolver's tests run against `InMemoryLibrary` (in the tests project), which follows Jellyfin's rules (unchanged from 12.1 to 12.4) for the three lookups the resolver makes: provider ids match on exact name and value, names match on Jellyfin's "clean" form (no accents, lower case, punctuation as spaces), and missing episodes aren't returned. If a Jellyfin upgrade changes those rules, update `InMemoryLibrary` to match and the tests will show what it affects.
 
 ### Releasing
 
-1. Set the new version in `build.yaml` and the `.csproj`, and replace `build.yaml`'s `changelog` with this release's notes.
+1. Set the new version in `build.yaml` and replace its `changelog` with this release's notes. (The release build stamps the DLL with the tag's version, so the `.csproj` doesn't need changing.)
 2. Commit and push to `main`, and check CI passes.
 3. Tag it: `git tag v1.2.3.4` then `git push origin v1.2.3.4`.
 
@@ -192,6 +205,7 @@ Done:
 - [x] **Import from a link**, and **ready-made orders** bundled with the plugin.
 - [x] **Structure and artwork for long orders**: sections, seasons as one row, a backdrop header and tile artwork, Jump to Up next, and search within an order.
 - [x] **Resolver tests** against an in-memory library that follows Jellyfin's lookup rules.
+- [x] **A redesigned Dashboard page**, with Orders, Add orders and Settings areas.
 
 ## Contributing
 
@@ -199,7 +213,7 @@ Bug reports, fixes and new orders are welcome. See [CONTRIBUTING.md](CONTRIBUTIN
 
 ## How this was built
 
-Watch Order was designed and tested by Verdancy and written with the help of Claude, Anthropic's AI assistant. Every feature was tried on a real Jellyfin server before release, and over 150 automated tests run on every change. All the code is here to read. If something looks wrong, please open an issue.
+Watch Order was designed and tested by Verdancy and written with the help of Claude, Anthropic's AI assistant. Every feature was tried on a real Jellyfin server before release, and over 200 automated tests run on every change. All the code is here to read. If something looks wrong, please open an issue.
 
 ## Licence
 
